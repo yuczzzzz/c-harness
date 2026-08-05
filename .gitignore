@@ -5,3 +5,8 @@
 .superpowers/
 coverage/
 node_modules/
+.env
+.env.*
+!.env.example
+*.log
+*.tsbuildinfo
