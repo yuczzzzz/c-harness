@@ -1,0 +1,7 @@
+.DS_Store
+.output/
+.wxt/
+.worktrees/
+.superpowers/
+coverage/
+node_modules/

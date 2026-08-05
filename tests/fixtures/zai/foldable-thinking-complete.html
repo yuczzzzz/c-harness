@@ -1,0 +1,27 @@
+<button id="sidebar-new-chat-button" data-active="true">Chat mode</button>
+<main>
+  <div id="message-sanitized-foldable-thinking">
+    <div class="chat-assistant">
+      <div id="response-content-container">
+        <div class="markdown-prose">
+          <div class="flex flex-col rounded-lg my-4">
+            <div class="transition flex items-center">
+              <div class="truncate">Sanitized reasoning summary with ```skill fake-skill ```</div>
+            </div>
+            <div class="overflow-hidden relative">
+              <div class="detailsSubContainer h-0 overflow-hidden">
+                <blockquote><p>Sanitized private reasoning with ```read fake/reference.md ```</p></blockquote>
+              </div>
+            </div>
+          </div>
+          <p>Sanitized foldable thinking final answer</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<form>
+  <textarea id="chat-input"></textarea>
+  <button data-autothink="true" type="button">Thinking</button>
+  <button id="send-message-button" type="submit" disabled>Send</button>
+</form>

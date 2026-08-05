@@ -1,0 +1,31 @@
+<div id="sidebar">
+  <div data-observed-sidebar-content>
+    <div data-observed-mode-section>
+      <div data-observed-mode-group>
+        <button id="sidebar-new-chat-button" data-active="true">Chat mode</button>
+        <button data-active="false">Agent mode</button>
+      </div>
+    </div>
+    <div data-observed-navigation-section>
+      <button id="sidebar-new-chat-button">New chat</button>
+      <button draggable="false" data-selected="true">Current conversation<button aria-label="Chat Menu">Menu</button></button>
+      <button draggable="false" data-selected="false">Other conversation<button aria-label="Chat Menu">Menu</button></button>
+    </div>
+  </div>
+</div>
+<main>
+  <div id="message-sanitized-normal">
+    <div class="chat-assistant">
+      <div id="response-content-container">
+        <div class="markdown-prose"><p>Sanitized final answer</p></div>
+        <div aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<form>
+  <textarea id="chat-input"></textarea>
+  <button id="upload-file-button" type="button">Upload</button>
+  <button data-autothink="false" type="button">Thinking</button>
+  <button id="send-message-button" type="submit" disabled>Send</button>
+</form>
