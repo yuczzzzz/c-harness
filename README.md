@@ -13,6 +13,17 @@ c-harness 是一款 Chrome Manifest V3 扩展。它在受支持的网页版大�
 
 [项目介绍](https://yuczzzzz.github.io/c-harness/)
 
+## 下载与安装
+
+[前往 GitHub Releases 下载最新版本](https://github.com/yuczzzzz/c-harness/releases)。每个版本提供可安装的 Chrome 扩展 ZIP，以及 ZIP 和 TAR.GZ 格式的源码归档。
+
+1. 下载最新版本的 `c-harness-*-chrome.zip`。
+2. 将 ZIP 完整解压到一个固定目录。
+3. 在 Chrome 地址栏打开 `chrome://extensions`，开启右上角的“开发者模式”。
+4. 点击“加载已解压的扩展程序”，选择刚才解压的目录。
+
+更新版本时，请下载新的扩展 ZIP 并解压到固定目录，再回到扩展管理页重新加载。Chrome 不支持直接安装此 ZIP，请勿在未解压的情况下选择安装包。
+
 ## 当前功能
 
 ### Skill 导入与管理

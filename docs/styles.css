@@ -677,6 +677,19 @@ h3 {
   margin-bottom: 8px;
 }
 
+.install-download {
+  margin-top: 14px;
+}
+
+.source-install > p {
+  color: var(--muted);
+}
+
+.source-install > p:last-child {
+  margin: 16px 0 0;
+  font-size: 13px;
+}
+
 .terminal {
   overflow-x: auto;
   margin: 0;
