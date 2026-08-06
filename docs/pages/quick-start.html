@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="安装 c-harness，并以 CodexPro 为例，通过无鉴权 Streamable HTTP MCP 连接网页对话模型与本地开发环境。"
+    />
+    <meta name="theme-color" content="#f7f8f5" />
+    <title>快速开始 | c-harness</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="返回 c-harness 首页">
+        <span class="brand-mark" aria-hidden="true">c:</span>
+        <span>c-harness</span>
+      </a>
+      <nav aria-label="主导航">
+        <a href="../index.html">主页</a>
+        <a href="./features.html">功能介绍</a>
+        <a href="./quick-start.html" aria-current="page">快速开始</a>
+        <a href="../usage-example/skill-mcp-usage-example.html">使用例</a>
+      </nav>
+      <a class="header-link" href="https://github.com/yuczzzzz/c-harness" target="_blank" rel="noreferrer">GitHub</a>
+    </header>
+
+    <main>
+      <section class="page-hero quick-start-hero" aria-labelledby="page-title">
+        <p class="eyebrow">Quick start</p>
+        <h1 id="page-title">快速开始</h1>
+        <p class="page-summary">
+          先把 c-harness 安装到 Chrome，再启动一个本地开发环境 MCP。完成后，DeepSeek 或 Z.ai
+          就能在你的确认下读取、编辑工作区文件并运行受限开发命令。
+        </p>
+        <ol class="quick-overview" aria-label="快速开始步骤概览">
+          <li><span>01</span>安装扩展</li>
+          <li><span>02</span>准备 Node.js</li>
+          <li><span>03</span>初始化本地开发环境 MCP</li>
+          <li><span>04</span>连接 MCP</li>
+        </ol>
+      </section>
+
+      <section class="section guide-section" aria-labelledby="extension-title">
+        <div class="guide-index">01</div>
+        <div class="guide-content">
+          <p class="section-kicker">Install extension</p>
+          <h2 id="extension-title">安装 c-harness</h2>
+          <ol class="instruction-list">
+            <li>
+              <h3>下载扩展安装包</h3>
+              <p>
+                前往 <a class="inline-link" href="https://github.com/yuczzzzz/c-harness/releases" target="_blank" rel="noreferrer">GitHub Releases</a>，
+                下载最新版本的 <code>c-harness-*-chrome.zip</code>，然后把 ZIP 完整解压到一个固定目录。
+              </p>
+            </li>
+            <li>
+              <h3>打开 Chrome 扩展管理页</h3>
+              <p>在地址栏输入 <code>chrome://extensions</code>，打开页面右上角的“开发者模式”。</p>
+            </li>
+            <li>
+              <h3>加载已解压的扩展</h3>
+              <p>点击“加载已解压的扩展程序”，选择刚才解压的目录。安装后可从扩展详情页进入“扩展程序选项”。</p>
+            </li>
+          </ol>
+          <aside class="guide-note">
+            Chrome 不能直接加载下载的 ZIP。升级时请下载新版本、解压到固定目录，再回到扩展管理页重新加载。
+          </aside>
+        </div>
+      </section>
+
+      <section class="section guide-section" aria-labelledby="environment-title">
+        <div class="guide-index">02</div>
+        <div class="guide-content">
+          <p class="section-kicker">Local environment</p>
+          <h2 id="environment-title">准备本地开发环境</h2>
+          <p class="section-lead">
+            c-harness 本身不会直接访问本地文件或执行命令。这里以
+            <a class="inline-link" href="https://github.com/rebel0789/codexpro" target="_blank" rel="noreferrer">CodexPro</a>
+            为例：它把你明确选择的工作区作为 MCP 服务开放给扩展。CodexPro 要求 Node.js 20 或更高版本。
+          </p>
+
+          <div class="platform-grid">
+            <article class="platform-panel">
+              <div class="platform-heading"><span class="platform-dot mac-dot" aria-hidden="true"></span><h3>macOS</h3></div>
+              <p>使用 nvm 安装并管理 Node.js，避免把 Node 版本绑定到系统环境。</p>
+              <ol>
+                <li>
+                  按照 <a class="inline-link" href="https://github.com/nvm-sh/nvm#installing-and-updating" target="_blank" rel="noreferrer">nvm 官方安装说明</a>
+                  安装 nvm，然后重新打开终端。
+                </li>
+                <li>安装并切换到 Node.js 20：</li>
+              </ol>
+              <pre class="terminal" aria-label="macOS 安装 Node.js 命令"><code><span>$</span> nvm install 20
+<span>$</span> nvm use 20
+<span>$</span> node --version
+<span>$</span> npm --version</code></pre>
+            </article>
+
+            <article class="platform-panel">
+              <div class="platform-heading"><span class="platform-dot windows-dot" aria-hidden="true"></span><h3>Windows</h3></div>
+              <p>先准备 Git Bash，再通过 nvm-windows 安装 Node.js。后续 CodexPro 命令全部在 Git Bash 中执行。</p>
+              <ol>
+                <li>
+                  从 <a class="inline-link" href="https://gitforwindows.org/" target="_blank" rel="noreferrer">Git for Windows</a>
+                  下载并安装，保留 Git Bash 组件。
+                </li>
+                <li>
+                  从 <a class="inline-link" href="https://github.com/coreybutler/nvm-windows/releases" target="_blank" rel="noreferrer">nvm-windows Releases</a>
+                  下载最新安装程序。若电脑已有独立安装的 Node.js，请先按项目说明处理旧版本，避免 PATH 冲突。
+                </li>
+                <li>打开 Git Bash，安装并切换到 Node.js 20：</li>
+              </ol>
+              <pre class="terminal" aria-label="Windows Git Bash 安装 Node.js 命令"><code><span>$</span> nvm install 20
+<span>$</span> nvm use 20
+<span>$</span> node --version
+<span>$</span> npm --version</code></pre>
+              <aside class="guide-note">从这一步开始，请始终使用 Git Bash 启动和操作 CodexPro。</aside>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section guide-section" aria-labelledby="codexpro-title">
+        <div class="guide-index">03</div>
+        <div class="guide-content">
+          <p class="section-kicker">CodexPro</p>
+          <h2 id="codexpro-title">初始化工作区并启动 MCP</h2>
+          <ol class="instruction-list">
+            <li>
+              <h3>安装 CodexPro</h3>
+              <pre class="terminal" aria-label="安装 CodexPro 命令"><code><span>$</span> npm install -g codexpro
+<span>$</span> codexpro --version</code></pre>
+            </li>
+            <li>
+              <h3>在自定义工作区目录中初始化</h3>
+              <p>把示例路径替换成你允许网页模型访问的项目目录。Windows 用户继续在 Git Bash 中使用正斜杠路径。</p>
+              <div class="command-pair">
+                <div>
+                  <strong>macOS</strong>
+                  <pre class="terminal"><code><span>$</span> cd /Users/your-name/code/my-project
+<span>$</span> codexpro setup --tunnel none --no-auth</code></pre>
+                </div>
+                <div>
+                  <strong>Windows · Git Bash</strong>
+                  <pre class="terminal"><code><span>$</span> cd /c/Users/your-name/code/my-project
+<span>$</span> codexpro setup --tunnel none --no-auth</code></pre>
+                </div>
+              </div>
+              <p>命令会把当前目录保存为工作区，并明确使用仅绑定本机回环地址的无鉴权本地模式。</p>
+              <p>默认键入 Enter 选择推荐配置即可。</p>
+            </li>
+            <li>
+              <h3>以本地模式启动</h3>
+              <p>以后只需进入同一工作区并运行：</p>
+              <pre class="terminal" aria-label="启动 CodexPro 本地 MCP 命令"><code><span>$</span> codexpro start --tunnel none --no-auth</code></pre>
+              <p>保持这个终端窗口运行。默认的无鉴权 Streamable HTTP 地址为：</p>
+              <pre class="endpoint"><code>http://127.0.0.1:8787/mcp</code></pre>
+            </li>
+          </ol>
+          <aside class="security-note">
+            <strong>只授权可信目录</strong>
+            <p>CodexPro 的 Tool 可以读取、修改文件并运行受限命令。请仅把你愿意开放的项目设为工作区，并在 c-harness 弹出调用确认时检查 Tool 与参数。</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section guide-section" aria-labelledby="connect-title">
+        <div class="guide-index">04</div>
+        <div class="guide-content">
+          <p class="section-kicker">Connect MCP</p>
+          <h2 id="connect-title">把 CodexPro 添加到扩展</h2>
+          <ol class="instruction-list">
+            <li><h3>打开 MCP 管理</h3><p>进入 c-harness 的“扩展程序选项”，在左侧选择“MCP 管理”。</p></li>
+            <li>
+              <h3>添加服务地址</h3>
+              <p>在“添加 MCP 服务”中粘贴 <code>http://127.0.0.1:8787/mcp</code>，点击“添加”。该地址使用 <strong>Streamable HTTP</strong>，无需填写鉴权信息。</p>
+            </li>
+            <li><h3>开始网页对话</h3><p>打开 DeepSeek 或 Z.ai 的 Chat 模式正常提问。模型需要本地能力时会先读取 CodexPro 详情，再请求调用具体 Tool；检查参数后选择仅本次允许、信任当前会话并允许或拒绝。</p></li>
+          </ol>
+
+          <div class="result-band">
+            <div>
+              <p class="section-kicker">Ready</p>
+              <h2>网页对话已经接入本地工作区</h2>
+              <p>现在可以让模型检查项目、读取或修改文件，并运行 CodexPro 允许的验证命令。所有实际能力都来自 CodexPro，c-harness 负责协调请求、回注结果和调用确认。</p>
+            </div>
+            <a class="button button-primary" href="../usage-example/skill-mcp-usage-example.html">查看使用例</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">c:</span><span>c-harness</span></a>
+      <p>基于 Harness 提高网页版大模型使用体验。</p>
+      <div>
+        <a href="./features.html">功能介绍</a>
+        <a href="https://github.com/yuczzzzz/c-harness/releases" target="_blank" rel="noreferrer">Releases</a>
+        <a href="https://github.com/yuczzzzz/c-harness" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
