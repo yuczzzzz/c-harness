@@ -313,6 +313,9 @@
       }
 
       .composer-box {
+        position: relative;
+        display: flex;
+        align-items: center;
         min-height: 66px;
         padding: 14px 56px 14px 16px;
         border: 1px solid #dadde3;
@@ -323,19 +326,50 @@
         font-size: 14px;
       }
 
+      .composer-text {
+        color: #292a2f;
+        line-height: 1.55;
+        white-space: pre-wrap;
+      }
+
+      .composer-text:empty::before {
+        color: #9a9da5;
+        content: attr(data-placeholder);
+      }
+
+      .composer-text.is-typing::after {
+        display: inline-block;
+        width: 1px;
+        height: 1.1em;
+        margin-left: 2px;
+        background: #4d6bfe;
+        content: "";
+        vertical-align: -.15em;
+        animation: caret-blink .8s steps(1) infinite;
+      }
+
       .send-button {
         position: absolute;
         right: 12px;
-        bottom: 12px;
+        top: 50%;
         display: grid;
         width: 34px;
         height: 34px;
+        transform: translateY(-50%);
         place-items: center;
         border: 0;
         border-radius: 50%;
         background: #e7e9ee;
         color: #a5a8b0;
+        transition: background .2s ease, color .2s ease, transform .2s ease;
       }
+
+      .send-button.is-ready {
+        background: #4d6bfe;
+        color: #fff;
+      }
+
+      .send-button.is-sending { transform: translateY(-50%) scale(.88); }
 
       .disclaimer {
         padding-top: 6px;
@@ -372,6 +406,112 @@
       .status-pill.is-playing .status-dot { animation: pulse 1.2s ease-in-out infinite; }
       .status-pill.is-complete .status-dot { background: #36a269; }
 
+      .approval-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 8;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(24, 26, 32, .22);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .22s ease;
+      }
+
+      .approval-layer.is-visible { opacity: 1; }
+
+      .approval-dialog {
+        width: min(430px, 100%);
+        padding: 22px;
+        border: 1px solid #e0e3e9;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 18px 52px rgba(20, 24, 35, .2);
+        transform: translateY(10px) scale(.98);
+        transition: transform .25s cubic-bezier(.22, 1, .36, 1);
+      }
+
+      .approval-layer.is-visible .approval-dialog { transform: translateY(0) scale(1); }
+
+      .approval-title { margin: 0; color: #25272d; font-size: 17px; }
+
+      .approval-description {
+        margin: 8px 0 16px;
+        color: #727680;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .approval-tool {
+        padding: 12px 14px;
+        border: 1px solid #e4e6eb;
+        border-radius: 6px;
+        background: #f7f8fa;
+      }
+
+      .approval-tool-name { color: #30323a; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; }
+      .approval-arguments { margin-top: 6px; color: #858993; font-size: 12px; }
+
+      .approval-trust {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 14px;
+        color: #646872;
+        font-size: 12px;
+      }
+
+      .approval-trust input { accent-color: #4d6bfe; }
+
+      .approval-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .approval-button {
+        min-width: 72px;
+        height: 34px;
+        padding: 0 14px;
+        border: 1px solid #dfe2e8;
+        border-radius: 6px;
+        background: #fff;
+        color: #4d5058;
+      }
+
+      .approval-button-primary {
+        border-color: #4d6bfe;
+        background: #4d6bfe;
+        color: #fff;
+        transition: transform .14s ease, background .14s ease;
+      }
+
+      .approval-button-primary.is-targeted { background: #3f5ce5; }
+      .approval-button-primary.is-clicked { transform: scale(.94); }
+
+      .demo-pointer {
+        position: absolute;
+        top: calc(50% + 92px);
+        left: calc(50% + min(26vw, 150px));
+        z-index: 10;
+        color: #202126;
+        font-size: 28px;
+        line-height: 1;
+        opacity: 0;
+        filter: drop-shadow(0 1px 1px rgba(255, 255, 255, .9));
+        transform: translate(58px, 50px);
+        transition: transform .75s cubic-bezier(.22, 1, .36, 1), opacity .18s ease;
+      }
+
+      .approval-layer.is-pointing .demo-pointer {
+        opacity: 1;
+        transform: translate(0, 0);
+      }
+
+      .approval-layer.is-clicking .demo-pointer { transform: translate(1px, 2px) scale(.9); }
+
       @keyframes message-in {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
@@ -380,6 +520,8 @@
       @keyframes pulse {
         50% { opacity: .35; transform: scale(.75); }
       }
+
+      @keyframes caret-blink { 50% { opacity: 0; } }
 
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; }
@@ -490,19 +632,7 @@ Current modes: tool=standard, bash=safe, write=workspace.；19 个 Tool
       
         <div class="message assistant">
           <div class="role">DeepSeek AI</div>
-          <div class="content"><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">skill</span></div></div></div></div><pre><span>name: zhangxuefeng-perspective</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp</span></div></div></div></div><pre><span>server: codexpro</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div></div>
-        </div>
-      
-        <div class="message user">
-          <div class="role">用户</div>
-          <div class="content">这批 skill/read 请求的写法不对，我没有读取。请按前面的格式整批重新发给我。
-
-具体错误：请求批次错误：MIXED_LABELS</div>
-        </div>
-      
-        <div class="message assistant">
-          <div class="role">DeepSeek AI</div>
-          <div class="content"><p class="ds-markdown-paragraph"><span class="">由于同一回复不能混用标签，我先单独请求读取 </span><strong><span class="">张雪峰视角</span></strong><span class=""> 的 Skill 内容，以便基于此分析车辆工程前景。后续我会再单独请求 CodexPro 的 MCP 详情来完成保存。</span></p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">skill</span></div></div></div></div><pre><span>name: zhangxuefeng-perspective</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div></div>
+          <div class="content"><p class="ds-markdown-paragraph"><span class="">我先单独请求读取 </span><strong><span class="">张雪峰视角</span></strong><span class=""> 的 Skill 内容，以便基于此分析车辆工程前景。后续我会再单独请求 CodexPro 的 MCP 详情来完成保存。</span></p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">skill</span></div></div></div></div><pre><span>name: zhangxuefeng-perspective</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div></div>
         </div>
       
         <div class="message user">
@@ -597,7 +727,7 @@ write_mode: workspace
           <div class="content"><p class="ds-markdown-paragraph"><span class="">收到工作区信息。当前路径为 </span>`/Users/example/c-harness`<span class="">，非 Git 仓库，无已有 Skill。</span></p><p class="ds-markdown-paragraph"><span class="">接下来我将按张雪峰式工作流处理你的问题：</span></p><ol start="1"><li><p class="ds-markdown-paragraph"><strong><span class="">先做研究</span></strong><span class="">（获取车辆工程专业的最新就业数据、薪资中位数、行业趋势）</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">再用张雪峰视角给出判断</span></strong><span class="">（家庭条件追问、数据引用、明确建议）</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">最后通过 CodexPro 保存为 Markdown</span></strong></p></li></ol><p class="ds-markdown-paragraph"><span class="">由于我无法在此环境中直接执行 Web 搜索，你需要</span><strong><span class="">手动提供以下关键数据</span></strong><span class="">（否则我只能基于训练语料中截至 2026 年 8 月前已知的信息给出判断，可能不够新）：</span></p><ul><li><p class="ds-markdown-paragraph"><span class="">2026 年车辆工程专业本科/硕士应届生</span><strong><span class="">就业率</span></strong><span class="">和</span><strong><span class="">薪资中位数</span></strong><span class="">（全国或主要城市）</span></p></li><li><p class="ds-markdown-paragraph"><span class="">近 2 年车企（传统主机厂 vs 新势力）</span><strong><span class="">招聘规模变化</span></strong><span class="">（扩招还是裁员）</span></p></li><li><p class="ds-markdown-paragraph"><span class="">智能驾驶/新能源方向对传统车辆工程岗位的</span><strong><span class="">替代或转型影响</span></strong></p></li><li><p class="ds-markdown-paragraph"><span class="">车辆工程专业毕业生 </span><strong><span class="">5 年后中位数去向</span></strong><span class="">（转行比例、薪资区间）</span></p></li></ul><p class="ds-markdown-paragraph"><span class="">如果你暂时没有这些数据，我可以基于 </span><strong><span class="">截至 2026 年 8 月前公开可查的行业共识</span></strong><span class=""> 先做一轮分析（我会在回答中明确标注数据来源和时效性），然后保存为 Markdown。你希望我先按哪种方式处理？</span></p><p class="ds-markdown-paragraph"><span class="">（如果你确认按「已知信息 + 明确标注时效性」处理，我将在下一条回复中给出完整分析，并调用 CodexPro 写入文件。）</span></p></div>
         </div>
       
-        <div class="message user">
+        <div class="message user" data-typed-text="确认">
           <div class="role">用户</div>
           <div class="content">我们按下面的约定完成这次问题：
 
@@ -716,9 +846,28 @@ diff: "--- a/vehicle-engineering-outlook.md
           </div>
 
           <div class="composer" aria-hidden="true">
-            <div class="composer-box">给 DeepSeek 发送消息</div>
-            <div class="send-button">↑</div>
+            <div class="composer-box">
+              <div class="composer-text" id="composer-text" data-placeholder="给 DeepSeek 发送消息"></div>
+              <div class="send-button" id="send-button">↑</div>
+            </div>
             <div class="disclaimer">内容由 AI 生成，请仔细甄别</div>
+          </div>
+
+          <div class="approval-layer" id="approval-layer" aria-hidden="true">
+            <section class="approval-dialog" role="dialog" aria-modal="true" aria-labelledby="approval-title">
+              <h2 class="approval-title" id="approval-title">允许调用 MCP Tool？</h2>
+              <p class="approval-description">DeepSeek 请求通过 CodexPro 使用以下工具。</p>
+              <div class="approval-tool">
+                <div class="approval-tool-name" id="approval-tool-name"></div>
+                <div class="approval-arguments" id="approval-arguments"></div>
+              </div>
+              <label class="approval-trust"><input type="checkbox" />在本次目标网站会话中信任 CodexPro</label>
+              <div class="approval-actions">
+                <button class="approval-button" type="button">拒绝</button>
+                <button class="approval-button approval-button-primary" id="approval-allow" type="button">允许</button>
+              </div>
+            </section>
+            <div class="demo-pointer" aria-hidden="true">↖</div>
           </div>
         </div>
       </section>
@@ -726,7 +875,9 @@ diff: "--- a/vehicle-engineering-outlook.md
 
     <script>
       (() => {
-        const interval = 2200;
+        const messageInterval = 2200;
+        const typingInterval = 45;
+        const userQuestion = "询问张雪峰老师，物理生学车辆工程专业就业前景如何，并将结果通过 codexpro 保存为 markdown";
         const messages = Array.from(document.querySelectorAll(".message"));
         const messageList = document.querySelector("#message-list");
         const dynamicMode = document.querySelector("#dynamic-mode");
@@ -736,9 +887,37 @@ diff: "--- a/vehicle-engineering-outlook.md
         const progress = document.querySelector("#progress");
         const playbackStatus = document.querySelector("#playback-status");
         const statusText = document.querySelector("#status-text");
+        const composerText = document.querySelector("#composer-text");
+        const sendButton = document.querySelector("#send-button");
+        const approvalLayer = document.querySelector("#approval-layer");
+        const approvalToolName = document.querySelector("#approval-tool-name");
+        const approvalArguments = document.querySelector("#approval-arguments");
+        const approvalAllow = document.querySelector("#approval-allow");
+
+        const timeline = [];
+        messages.forEach((message, index) => {
+          const typedText = index === 0 ? userQuestion : message.dataset.typedText;
+          if (typedText) timeline.push({ type: "typing", text: typedText });
+          timeline.push({ type: "message", messageIndex: index });
+          const commandText = message.querySelector("pre")?.textContent ?? "";
+          if (message.classList.contains("assistant") && commandText.includes("server: codexpro") && commandText.includes("tool:")) {
+            const tool = commandText.match(/tool:\s*([^\n]+)/)?.[1]?.trim() ?? "unknown";
+            const argumentKeys = commandText
+              .split("\n")
+              .map((line) => line.match(/^\s{2}([^:\n]+):/)?.[1]?.trim())
+              .filter(Boolean);
+            timeline.push({
+              type: "approval",
+              tool,
+              arguments: argumentKeys.length > 0 ? `参数：${argumentKeys.join("、")}` : "参数：无",
+            });
+          }
+        });
 
         let mode = "dynamic";
-        let visibleCount = 1;
+        let timelineIndex = 0;
+        let typedCharacterCount = 0;
+        let approvalStage = 0;
         let playing = true;
         let timer = null;
 
@@ -758,33 +937,96 @@ diff: "--- a/vehicle-engineering-outlook.md
 
         const scheduleNext = () => {
           window.clearTimeout(timer);
-          if (mode !== "dynamic" || !playing || visibleCount >= messages.length) return;
+          if (mode !== "dynamic" || !playing || timelineIndex >= timeline.length) return;
+
+          const currentItem = timeline[timelineIndex];
+          if (currentItem.type === "typing") {
+            if (typedCharacterCount < currentItem.text.length) {
+              timer = window.setTimeout(() => {
+                typedCharacterCount += 1;
+                render();
+                scheduleNext();
+              }, typingInterval);
+              return;
+            }
+            timer = window.setTimeout(() => {
+              sendButton.classList.add("is-sending");
+              window.setTimeout(() => sendButton.classList.remove("is-sending"), 180);
+              typedCharacterCount = 0;
+              timelineIndex += 1;
+              render();
+              scrollToBottom();
+              scheduleNext();
+            }, 500);
+            return;
+          }
+
+          if (currentItem.type === "approval") {
+            const approvalDelays = [500, 850, 320, 420];
+            timer = window.setTimeout(() => {
+              approvalStage += 1;
+              if (approvalStage >= approvalDelays.length) {
+                approvalStage = 0;
+                timelineIndex += 1;
+              }
+              render();
+              scheduleNext();
+            }, approvalDelays[approvalStage]);
+            return;
+          }
+
           timer = window.setTimeout(() => {
-            visibleCount += 1;
+            timelineIndex += 1;
             render();
-            scrollToBottom(visibleCount >= messages.length);
+            scrollToBottom(timelineIndex >= timeline.length);
             scheduleNext();
-          }, interval);
+          }, messageInterval);
         };
 
         const render = () => {
           const isDynamic = mode === "dynamic";
-          const isComplete = visibleCount >= messages.length;
+          const isComplete = timelineIndex >= timeline.length;
+          const currentItem = timeline[timelineIndex];
+          const visibleCount = isDynamic
+            ? timeline.slice(0, timelineIndex + 1).filter((item) => item.type === "message").length
+            : messages.length;
+          const approvalVisible = isDynamic && currentItem?.type === "approval";
 
           messages.forEach((message, index) => {
             message.hidden = isDynamic && index >= visibleCount;
           });
+          composerText.textContent = isDynamic && currentItem?.type === "typing"
+            ? currentItem.text.slice(0, typedCharacterCount)
+            : "";
+          composerText.classList.toggle("is-typing", isDynamic && currentItem?.type === "typing" && playing);
+          sendButton.classList.toggle("is-ready", isDynamic && currentItem?.type === "typing" && typedCharacterCount > 0);
+
+          approvalLayer.classList.toggle("is-visible", approvalVisible && approvalStage >= 0);
+          approvalLayer.classList.toggle("is-pointing", approvalVisible && approvalStage >= 1);
+          approvalLayer.classList.toggle("is-clicking", approvalVisible && approvalStage >= 3);
+          approvalAllow.classList.toggle("is-targeted", approvalVisible && approvalStage >= 2);
+          approvalAllow.classList.toggle("is-clicked", approvalVisible && approvalStage >= 3);
+          approvalLayer.setAttribute("aria-hidden", String(!approvalVisible));
+          if (approvalVisible) {
+            approvalToolName.textContent = `codexpro / ${currentItem.tool}`;
+            approvalArguments.textContent = currentItem.arguments;
+          }
+
           dynamicMode.setAttribute("aria-selected", String(isDynamic));
           staticMode.setAttribute("aria-selected", String(!isDynamic));
           playButton.disabled = !isDynamic || isComplete;
           restartButton.disabled = !isDynamic;
-          progress.textContent = `${isDynamic ? visibleCount : messages.length} / ${messages.length}`;
+          progress.textContent = `${visibleCount} / ${messages.length}`;
 
           if (!isDynamic) {
             statusText.textContent = "全部对话已展开";
           } else if (isComplete) {
             playing = false;
             statusText.textContent = "演示播放完成";
+          } else if (currentItem?.type === "typing") {
+            statusText.textContent = playing ? "用户正在输入" : "演示已暂停";
+          } else if (currentItem?.type === "approval") {
+            statusText.textContent = playing ? "等待 MCP Tool 确认" : "演示已暂停";
           } else if (playing) {
             statusText.textContent = "对话演示中";
           } else {
@@ -801,7 +1043,7 @@ diff: "--- a/vehicle-engineering-outlook.md
         const setMode = (nextMode) => {
           mode = nextMode;
           window.clearTimeout(timer);
-          if (mode === "dynamic" && visibleCount < messages.length) playing = true;
+          if (mode === "dynamic" && timelineIndex < timeline.length) playing = true;
           render();
           messageList.scrollTo({ top: mode === "static" ? 0 : messageList.scrollHeight, behavior: "smooth" });
           scheduleNext();
@@ -815,7 +1057,9 @@ diff: "--- a/vehicle-engineering-outlook.md
           scheduleNext();
         });
         restartButton.addEventListener("click", () => {
-          visibleCount = 1;
+          timelineIndex = 0;
+          typedCharacterCount = 0;
+          approvalStage = 0;
           playing = true;
           messageList.scrollTo({ top: 0, behavior: "smooth" });
           render();
