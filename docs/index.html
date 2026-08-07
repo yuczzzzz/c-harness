@@ -37,8 +37,8 @@
           <p class="eyebrow">Chrome Manifest V3 extension</p>
           <h1 id="hero-title">c-harness</h1>
           <p class="hero-summary">
-            让网页版大模型在 Chat 模式中，按需读取你主动导入的 Skill 与 Reference，
-            并在确认后调用你添加的 MCP 服务。
+            不必在网页对话与本地资料、工具之间反复查找、复制和补上下文。
+            正常提问，模型按需获取你主动导入的 Skill、Reference 和 MCP 能力。
           </p>
           <aside class="risk-notice" aria-labelledby="risk-title">
             <strong id="risk-title">风险须知</strong>
@@ -49,8 +49,8 @@
           </aside>
           <div class="hero-actions">
             <a class="button button-primary" href="./pages/quick-start.html">快速开始</a>
-            <a class="button button-secondary" href="./pages/features.html">功能介绍</a>
             <a class="button button-secondary" href="./usage-example/skill-mcp-usage-example.html">查看使用例</a>
+            <a class="button button-secondary" href="https://github.com/yuczzzzz/c-harness" target="_blank" rel="noreferrer">点个 Star</a>
           </div>
           <ul class="support-list" aria-label="当前支持范围">
             <li>Google Chrome 114+</li>
@@ -71,6 +71,41 @@
             height="980"
           />
         </figure>
+      </section>
+
+      <section class="comparison-section" aria-labelledby="comparison-title">
+        <div class="comparison-heading">
+          <p class="section-kicker">Conversation flow</p>
+          <h2 id="comparison-title">把注意力留在问题上</h2>
+        </div>
+        <div class="comparison-grid">
+          <article class="comparison-step comparison-before">
+            <p class="comparison-label">以前</p>
+            <p class="comparison-flow">找文件 <span aria-hidden="true">→</span> 复制 <span aria-hidden="true">→</span> 粘贴 <span aria-hidden="true">→</span> 补上下文</p>
+            <p>每一次对话都要在网页、资料和工具之间来回切换。</p>
+          </article>
+          <article class="comparison-step comparison-after">
+            <p class="comparison-label">现在</p>
+            <p class="comparison-flow">正常提问 <span aria-hidden="true">→</span> 按需获取 <span aria-hidden="true">→</span> 确认调用</p>
+            <p>模型通过明确的 Harness 命令请求需要的内容，实际 MCP Tool 调用仍由你确认。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="workflow-section workflow-section-light homepage-workflow" aria-labelledby="workflow-title">
+        <div class="section-heading-row">
+          <div>
+            <p class="section-kicker">Only what is needed</p>
+            <h2 id="workflow-title">按需协作，不预先塞满对话</h2>
+          </div>
+          <p>先披露目录，再读取实际需要的 Skill、Reference 或 MCP 服务详情；每次 Tool 调用都清楚地留给你决定。</p>
+        </div>
+        <ol class="workflow-list">
+          <li><span class="step-number">01</span><div><h3>正常提问</h3><p>从你原本的网页 Chat 对话开始。</p></div></li>
+          <li><span class="step-number">02</span><div><h3>按需读取</h3><p>模型显式请求需要的 Skill、Reference 或服务详情。</p></div></li>
+          <li><span class="step-number">03</span><div><h3>确认调用</h3><p>调用 MCP Tool 前展示名称与结构化参数。</p></div></li>
+          <li><span class="step-number">04</span><div><h3>继续回答</h3><p>把真实结果回到同一段对话，完成当前问题。</p></div></li>
+        </ol>
       </section>
 
     </main>

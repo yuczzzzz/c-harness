@@ -106,6 +106,7 @@ nav a[aria-current="page"] {
 
 .hero,
 .section,
+.comparison-section,
 footer {
   width: min(calc(100% - 48px), var(--max-width));
   margin-inline: auto;
@@ -116,7 +117,7 @@ footer {
   grid-template-columns: minmax(0, 0.92fr) minmax(520px, 1.08fr);
   gap: 64px;
   align-items: center;
-  min-height: min(760px, calc(100vh - 124px));
+  min-height: max(620px, calc(100svh - 140px));
   padding: 64px 0 48px;
 }
 
@@ -288,6 +289,80 @@ h1 {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.comparison-section {
+  padding: 44px 0 104px;
+  border-top: 1px solid var(--line);
+}
+
+.comparison-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  gap: 72px;
+  align-items: end;
+}
+
+.comparison-heading .section-kicker,
+.comparison-heading h2 {
+  margin-bottom: 0;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 44px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.comparison-step {
+  min-height: 230px;
+  padding: 28px 36px 30px 0;
+}
+
+.comparison-step + .comparison-step {
+  padding-right: 0;
+  padding-left: 36px;
+  border-left: 1px solid var(--line);
+}
+
+.comparison-label {
+  margin-bottom: 48px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.comparison-before .comparison-label {
+  color: var(--confirm);
+}
+
+.comparison-after .comparison-label {
+  color: var(--skill);
+}
+
+.comparison-flow {
+  margin-bottom: 14px;
+  font-size: 25px;
+  font-weight: 730;
+  line-height: 1.34;
+}
+
+.comparison-flow span {
+  color: var(--mcp);
+}
+
+.comparison-step > p:last-child {
+  max-width: 460px;
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.homepage-workflow {
+  padding-top: 92px;
+  padding-bottom: 96px;
 }
 
 .section {
@@ -1037,6 +1112,11 @@ footer > div {
     width: min(100%, 760px);
   }
 
+  .comparison-heading {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
   .workflow-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1105,13 +1185,15 @@ footer > div {
   .hero,
   .section,
   .page-hero,
+  .comparison-section,
   footer {
     width: min(calc(100% - 32px), var(--max-width));
   }
 
   .hero {
     gap: 20px;
-    padding: 36px 0 18px;
+    min-height: calc(100svh - 138px);
+    padding: 28px 0 12px;
   }
 
   h1 {
@@ -1123,6 +1205,7 @@ footer > div {
   }
 
   .hero-summary {
+    margin-bottom: 20px;
     font-size: 17px;
   }
 
@@ -1131,12 +1214,13 @@ footer > div {
   }
 
   .product-preview img {
-    height: 120px;
+    height: 64px;
     object-fit: cover;
     object-position: center;
   }
 
   .risk-notice {
+    margin-bottom: 16px;
     padding: 10px 12px;
     font-size: 12px;
     line-height: 1.45;
@@ -1155,6 +1239,10 @@ footer > div {
     padding: 76px 0;
   }
 
+  .hero-actions {
+    margin-bottom: 26px;
+  }
+
   .workflow-section {
     width: 100%;
     padding-inline: 16px;
@@ -1166,9 +1254,38 @@ footer > div {
   .timing-feature,
   .guide-section,
   .command-pair,
-  .result-band {
+  .result-band,
+  .comparison-grid {
     grid-template-columns: 1fr;
     gap: 22px;
+  }
+
+  .comparison-section {
+    padding: 32px 0 76px;
+  }
+
+  .comparison-step,
+  .comparison-step + .comparison-step {
+    min-height: 0;
+    padding: 22px 0;
+    border-left: 0;
+  }
+
+  .comparison-step + .comparison-step {
+    border-top: 1px solid var(--line);
+  }
+
+  .comparison-label {
+    margin-bottom: 24px;
+  }
+
+  .comparison-flow {
+    font-size: 21px;
+  }
+
+  .homepage-workflow {
+    padding-top: 76px;
+    padding-bottom: 76px;
   }
 
   .page-hero {

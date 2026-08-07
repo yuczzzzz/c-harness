@@ -177,14 +177,19 @@
               <h3>添加服务地址</h3>
               <p>在“添加 MCP 服务”中粘贴 <code>http://127.0.0.1:8787/mcp</code>，点击“添加”。该地址使用 <strong>Streamable HTTP</strong>，无需填写鉴权信息。</p>
             </li>
-            <li><h3>开始网页对话</h3><p>打开 DeepSeek 或 Z.ai 的 Chat 模式正常提问。模型需要本地能力时会先读取 CodexPro 详情，再请求调用具体 Tool；检查参数后选择仅本次允许、信任当前会话并允许或拒绝。</p></li>
+            <li>
+              <h3>确认本地环境识别</h3>
+              <p>c-harness 会读取 MCP 初始化信息中的 <code>serverName</code>，以忽略大小写的精确匹配识别 CodexPro，而不是根据服务地址或服务 ID 推断。识别成功后，模型在文件、本地、工作区、文件目录和本地 Skill 场景会收到使用 CodexPro 的提示。</p>
+              <aside class="guide-note">若同时连接了多个被识别为 CodexPro 的服务，Harness 会优先选择 <code>serverTitle</code> 排序最靠前的一项；没有标题的服务排在后面，同标题再按 <code>serviceId</code> 排序。MCP 管理页会列出所有命中服务和当前选择。</aside>
+            </li>
+            <li><h3>开始网页对话</h3><p>打开 DeepSeek 或 Z.ai 的 Chat 模式正常提问。模型需要本地能力时会先读取 CodexPro 详情，再请求调用具体 Tool；检查参数后选择仅本次允许、信任当前会话并允许或拒绝。若同时启用了 Skill，模型会先向你确认 Skill 来源，确认前不会发出 Harness 命令。</p></li>
           </ol>
 
           <div class="result-band">
             <div>
               <p class="section-kicker">Ready</p>
               <h2>网页对话已经接入本地工作区</h2>
-              <p>现在可以让模型检查项目、读取或修改文件，并运行 CodexPro 允许的验证命令。所有实际能力都来自 CodexPro，c-harness 负责协调请求、回注结果和调用确认。</p>
+              <p>现在可以让模型检查项目、读取或修改文件，并运行 CodexPro 允许的验证命令。所有实际能力都来自 CodexPro，c-harness 负责协调请求、回注结果和调用确认；启用 Skill 时会先由你确认其来源。</p>
             </div>
             <a class="button button-primary" href="../usage-example/skill-mcp-usage-example.html">查看使用例</a>
           </div>
