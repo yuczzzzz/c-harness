@@ -10,7 +10,7 @@ Options:
   --site deepseek|zai          Target chat site.
   --matrix no-harness|skill-only|mcp-only|full
                               Capability matrix to verify.
-  --scenario baseline|local-environment-guidance
+  --scenario baseline|local-environment-guidance|unavailable-mcp-filter
                               Acceptance scenario. Default: baseline.
   --extension-id <id>          Chrome extension id. Can also use CH_EXTENSION_ID.
   --question <text>            Optional question text. Defaults to a unique smoke prompt.
@@ -89,15 +89,15 @@ case "$matrix" in
 esac
 
 case "$scenario" in
-  baseline|local-environment-guidance) ;;
+  baseline|local-environment-guidance|unavailable-mcp-filter) ;;
   *)
-    echo "--scenario must be baseline or local-environment-guidance." >&2
+    echo "--scenario must be baseline, local-environment-guidance, or unavailable-mcp-filter." >&2
     exit 2
     ;;
 esac
 
-if [[ "$scenario" == "local-environment-guidance" && "$matrix" != "mcp-only" && "$matrix" != "full" ]]; then
-  echo "local-environment-guidance requires the mcp-only or full matrix." >&2
+if [[ "$scenario" != "baseline" && "$matrix" != "mcp-only" && "$matrix" != "full" ]]; then
+  echo "$scenario requires the mcp-only or full matrix." >&2
   exit 2
 fi
 
@@ -178,13 +178,17 @@ const scenarioIncludes = scenario === 'local-environment-guidance'
       '多行字符串必须使用 YAML 块标量 `|`',
       '禁止在单引号或双引号字符串中直接换行',
       'arguments:\n  command: |\n    first command\n    second command',
-      '需要通过 bash 执行命令时，必须优先使用本地开发环境已安装的程序解决问题',
-      '只有已安装的程序无法解决时，才向我确认是否安装其他程序；得到确认前不得安装'
+      '需要通过 bash 执行命令时，必须先执行命令查询本地开发环境情况',
+      '如果本地开发环境能够满足需求, 则直接执行对应命令。只有本地开发环境无法满足需求时，才向我确认是否安装其他程序；得到确认前不得安装'
     ]
   : []
 const expected = {
   ...expectedByMatrix[matrix],
-  includes: [...expectedByMatrix[matrix].includes, ...scenarioIncludes]
+  includes: [...expectedByMatrix[matrix].includes, ...scenarioIncludes],
+  excludes: [
+    ...expectedByMatrix[matrix].excludes,
+    ...(scenario === 'unavailable-mcp-filter' ? ['Acceptance Unavailable MCP'] : [])
+  ]
 }
 
 function stringify(value) {
@@ -333,6 +337,41 @@ function indexedDbHelpersSource(actionSource) {
       return service.serviceId
     }
 
+    async function prepareUnavailableMcpFilter() {
+      const database = await openDatabase('c-harness-mcp')
+      const services = await new Promise((resolve, reject) => {
+        const transaction = database.transaction('services', 'readonly')
+        const request = transaction.objectStore('services').getAll()
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+      if (services.length < 1) {
+        database.close()
+        throw new Error('unavailable-mcp-filter requires at least one MCP service.')
+      }
+      const availableService = services[1] || {
+        ...services[0],
+        recordId: crypto.randomUUID(),
+        serviceId: 'acceptance-available-' + Date.now(),
+        endpoint: services[0].endpoint + (services[0].endpoint.includes('?') ? '&' : '?') + 'acceptance=available',
+        serverTitle: 'Acceptance Available MCP'
+      }
+      await new Promise((resolve, reject) => {
+        const transaction = database.transaction('services', 'readwrite')
+        const store = transaction.objectStore('services')
+        store.put({
+          ...services[0],
+          serverTitle: 'Acceptance Unavailable MCP',
+          detectionStatus: 'unavailable'
+        })
+        store.put({ ...availableService, detectionStatus: 'available' })
+        transaction.oncomplete = resolve
+        transaction.onerror = () => reject(transaction.error)
+      })
+      database.close()
+      return { unavailableServiceId: services[0].serviceId, availableServiceId: availableService.serviceId }
+    }
+
     ${actionSource}
   })()`
 }
@@ -407,11 +446,11 @@ try {
   if (expected.requiresMcp && backup.mcpCount < 1) {
     throw new Error(`${matrix} requires at least one MCP service in extension IndexedDB.`)
   }
-
   await runOnExtensionPage(indexedDbHelpersSource(`
     await setSkillEnabled(${expected.skillEnabled ? 'true' : 'false'})
     ${expected.mcpEnabled ? '' : 'await clearMcpServices()'}
     ${scenario === 'local-environment-guidance' ? 'await markFirstMcpAsLocalEnvironment()' : ''}
+    ${scenario === 'unavailable-mcp-filter' ? 'await prepareUnavailableMcpFilter()' : ''}
     return {
       skillEnabled: ${expected.skillEnabled ? 'true' : 'false'},
       mcpEnabled: ${expected.mcpEnabled ? 'true' : 'false'},

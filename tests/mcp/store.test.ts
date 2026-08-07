@@ -6,6 +6,7 @@ import {
   deleteMcpService,
   hasCurrentMcpSessionTrust,
   hasOtherMcpServiceWithOrigin,
+  listMcpServiceCatalog,
   listMcpSessionDisclosures,
   listMcpSessionTrusts,
   listMcpServices,
@@ -46,6 +47,15 @@ describe("MCP service store", () => {
     expect(unavailable.lastDetectionAt).not.toBe("");
     expect(unavailable.lastVerifiedAt).toBe(service.lastVerifiedAt);
     expect(unavailable.detailSummary).toBe(service.detailSummary);
+  });
+
+  it("excludes unavailable services from the Harness catalog", async () => {
+    await addMcpService("http://127.0.0.1:3000/mcp", "http://127.0.0.1:3000", details("available"));
+    await addMcpService("http://127.0.0.1:3001/mcp", "http://127.0.0.1:3001", details("unavailable"));
+    await markMcpServiceUnavailable("unavailable");
+
+    expect((await listMcpServices()).map((service) => service.serviceId)).toEqual(["available", "unavailable"]);
+    expect((await listMcpServiceCatalog()).map((service) => service.serviceId)).toEqual(["available"]);
   });
 
   it("treats records saved before detection status existed as available", async () => {

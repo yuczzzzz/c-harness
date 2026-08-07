@@ -97,14 +97,16 @@ export async function listMcpServices(): Promise<McpServiceRecord[]> {
 
 /** 返回给目标网站 Harness 使用的精简 MCP 服务目录。 */
 export async function listMcpServiceCatalog(): Promise<McpServiceCatalogItem[]> {
-  return (await listMcpServices()).map((service) => ({
-    serviceId: service.serviceId,
-    serverName: service.serverName,
-    serverTitle: service.serverTitle,
-    displayName: service.serverTitle || service.serverName || service.serviceId,
-    description: service.description,
-    toolCount: service.toolCount
-  }));
+  return (await listMcpServices())
+    .filter((service) => service.detectionStatus !== "unavailable")
+    .map((service) => ({
+      serviceId: service.serviceId,
+      serverName: service.serverName,
+      serverTitle: service.serverTitle,
+      displayName: service.serverTitle || service.serverName || service.serviceId,
+      description: service.description,
+      toolCount: service.toolCount
+    }));
 }
 
 /** 使用已发现详情添加一个新的 MCP 服务。 */

@@ -1,3 +1,4 @@
+import localEnvironmentMcpConfig from "@/config/local-environment-mcp.json";
 import type { McpServiceCatalogItem, McpServiceRecord } from "@/mcp/contracts";
 
 export type LocalEnvironmentMcpCandidate = Pick<
@@ -10,7 +11,9 @@ export interface LocalEnvironmentMcpSelection {
   matches: LocalEnvironmentMcpCandidate[];
 }
 
-const LOCAL_ENVIRONMENT_SERVER_NAMES = new Set(["codexpro"]);
+const LOCAL_ENVIRONMENT_SERVER_NAMES = new Set(
+  localEnvironmentMcpConfig.serverNames.map((serverName) => serverName.toLocaleLowerCase())
+);
 
 /** 按本地环境白名单筛选 MCP 服务，并返回 Harness 实际采用的服务。 */
 export function selectLocalEnvironmentMcp(

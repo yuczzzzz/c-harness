@@ -122,8 +122,8 @@ describe("initial harness", () => {
     }], [], { skillEnabled: true, mcpEnabled: true });
 
     expect(harness).toContain("使用CodexPro Local从本地环境获取。");
-    expect(harness).toContain("需要通过 bash 执行命令时，必须优先使用本地开发环境已安装的程序解决问题");
-    expect(harness).toContain("只有已安装的程序无法解决时，才向我确认是否安装其他程序；得到确认前不得安装");
+    expect(harness).toContain("需要通过 bash 执行命令时，必须先执行命令查询本地开发环境情况");
+    expect(harness).toContain("如果本地开发环境能够满足需求, 则直接执行对应命令。只有本地开发环境无法满足需求时，才向我确认是否安装其他程序；得到确认前不得安装");
     expect(harness).toContain("在获取任何 Skill 前，必须先与我确认 Skill 来源");
     expect(harness).not.toContain("http://127.0.0.1:3000/mcp");
     expect(harness).not.toContain("inputSchema");
