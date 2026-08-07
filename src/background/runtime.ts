@@ -199,6 +199,7 @@ export async function handleRuntimeRequest(
           return failure("Skill 删除请求无效。");
         }
         await deleteSkill(message.skillName);
+        if ((await listSkills()).length === 0) await updateSkillEnabled(false);
         return { ok: true, data: undefined };
     }
   } catch (error) {

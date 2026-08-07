@@ -72,7 +72,7 @@ describe("initial harness", () => {
       displayName: "Weather Tools",
       description: "天气查询",
       toolCount: 1
-    }], [], { skillEnabled: false });
+    }], [], { skillEnabled: false, mcpEnabled: true });
 
     expect(harness).toContain("当前 MCP 服务目录：");
     expect(harness).toContain("- weather：Weather Tools；天气查询；1 个 Tool");
@@ -82,6 +82,25 @@ describe("initial harness", () => {
     expect(harness).not.toContain("当前 Skill 目录");
     expect(harness).not.toContain("writing");
     expect(harness).not.toContain("本会话已经读取");
+  });
+
+  it("builds a Skill-only harness when MCP is disabled", () => {
+    const harness = buildInitialHarness([
+      metadataFor("writing", "写作支持")
+    ], "问题", undefined, [{
+      serviceId: "weather",
+      displayName: "Weather Tools",
+      description: "天气查询",
+      toolCount: 1
+    }], [], { skillEnabled: true, mcpEnabled: false });
+
+    expect(harness).toContain("当前 Skill 目录：");
+    expect(harness).toContain("- writing：写作支持");
+    expect(harness).toContain("```skill\nname: skill-name\n```");
+    expect(harness).toContain("```read\npath: skill-name/references/file.md\n```");
+    expect(harness).not.toContain("当前 MCP 服务目录");
+    expect(harness).not.toContain("```mcp");
+    expect(harness).not.toContain("weather");
   });
 });
 

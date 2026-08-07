@@ -20,7 +20,7 @@ describe("general settings store", () => {
 
   it("returns default settings for a fresh install", async () => {
     await expect(getGeneralSettings()).resolves.toEqual({
-      skillEnabled: true,
+      skillEnabled: false,
       reinjectionDelayMinSeconds: 1,
       reinjectionDelayMaxSeconds: 3
     });
@@ -79,7 +79,7 @@ describe("general settings store", () => {
 
     await expect(updateReinjectionDelay(minSeconds, maxSeconds)).rejects.toThrow(message);
     await expect(getGeneralSettings()).resolves.toEqual({
-      skillEnabled: true,
+      skillEnabled: false,
       reinjectionDelayMinSeconds: 2,
       reinjectionDelayMaxSeconds: 5
     });

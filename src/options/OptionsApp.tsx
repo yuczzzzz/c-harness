@@ -206,10 +206,13 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
 
   const refresh = useCallback(async () => {
     try {
-      setSkills(await client.getCatalog());
+      const nextSkills = await client.getCatalog();
+      setSkills(nextSkills);
       setError("");
+      return nextSkills;
     } catch (loadError) {
       setError(messageFrom(loadError));
+      return null;
     }
   }, [client]);
 
@@ -265,10 +268,10 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
       }
     }
     setResults(nextResults);
-    await refresh();
+    await Promise.all([refresh(), refreshSettings()]);
     setBusy(false);
     if (fileInput.current) fileInput.current.value = "";
-  }, [busy, client, refresh, skills]);
+  }, [busy, client, refresh, refreshSettings, skills]);
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
     void importFiles(Array.from(event.target.files ?? []));
@@ -283,7 +286,7 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
     if (!window.confirm(`确定删除 Skill「${skill.name}」及其全部 Reference？`)) return;
     try {
       await client.delete(skill.name);
-      await refresh();
+      await Promise.all([refresh(), refreshSettings()]);
     } catch (deleteError) {
       setError(messageFrom(deleteError));
     }
@@ -307,6 +310,7 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
   };
 
   const savedBytes = skills.reduce((total, skill) => total + skill.savedBytes, 0);
+  const canToggleSkill = skills.length > 0;
   const filteredSkills = useMemo(() => {
     return skills.filter((skill) => matchesSkillQuery(skill, query));
   }, [query, skills]);
@@ -341,11 +345,11 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
         <label className="toggle-control">
           <input
             type="checkbox"
-            checked={skillEnabled}
-            disabled={savingSkillEnabled}
+            checked={canToggleSkill && skillEnabled}
+            disabled={!canToggleSkill || savingSkillEnabled}
             onChange={(event) => void handleSkillEnabledChange(event.target.checked)}
           />
-          <span>{skillEnabled ? "已启用" : "已停用"}</span>
+          <span>{canToggleSkill && skillEnabled ? "已启用" : "已停用"}</span>
         </label>
       </section>
 

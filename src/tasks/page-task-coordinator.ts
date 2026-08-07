@@ -76,6 +76,11 @@ export interface McpPageTaskStrategy {
   callTool?(sessionId: string, request: McpToolCallRequest): Promise<McpToolCallResult>;
 }
 
+interface TaskCapabilitySnapshot {
+  skillEnabled: boolean;
+  mcpEnabled: boolean;
+}
+
 /** 协调一个内存中的增强任务，并拦截当前页面上的用户发送操作。 */
 export class PageTaskCoordinator {
   private state: TaskState | null = null;
@@ -85,6 +90,7 @@ export class PageTaskCoordinator {
   private runId = 0;
   private abortController: AbortController | null = null;
   private reinjectionTimer: number | null = null;
+  private capabilitySnapshot: TaskCapabilitySnapshot | null = null;
 
   constructor(
     private readonly adapter: SiteTaskPort,
@@ -133,18 +139,31 @@ export class PageTaskCoordinator {
         reinjectionDelayMinSeconds: 1,
         reinjectionDelayMaxSeconds: 3
       }));
-      const skillEnabled = settings.skillEnabled;
-      const [catalog, initialKnowledge, mcpCatalog, mcpDisclosures] = await Promise.all([
-        skillEnabled ? this.loadCatalog() : Promise.resolve([]),
+      const configuredSkillEnabled = settings.skillEnabled;
+      const [catalog, mcpCatalog] = await Promise.all([
+        configuredSkillEnabled ? this.loadCatalog() : Promise.resolve([]),
+        this.hooks.mcp?.loadCatalog() ?? Promise.resolve([])
+      ]);
+      const skillEnabled = configuredSkillEnabled && catalog.length > 0;
+      const mcpEnabled = mcpCatalog.length > 0;
+      this.capabilitySnapshot = { skillEnabled, mcpEnabled };
+      if (!skillEnabled && !mcpEnabled) {
+        await this.sendInternal(normalizedQuestion);
+        return this.complete();
+      }
+
+      const [initialKnowledge, mcpDisclosures] = await Promise.all([
         skillEnabled ? this.hooks.progressiveKnowledge?.loadInitialState() : Promise.resolve(undefined),
-        this.hooks.mcp?.loadCatalog() ?? Promise.resolve([]),
-        this.hooks.mcp && sessionId
+        mcpEnabled && this.hooks.mcp && sessionId
           ? this.hooks.mcp.loadDisclosures(sessionId)
           : Promise.resolve([])
       ]);
       this.assertCurrentRun(currentRunId);
       let cursor = this.adapter.captureAssistantCursor();
-      await this.sendInternal(buildInitialHarness(catalog, normalizedQuestion, initialKnowledge, mcpCatalog, mcpDisclosures, { skillEnabled }));
+      await this.sendInternal(buildInitialHarness(catalog, normalizedQuestion, initialKnowledge, mcpCatalog, mcpDisclosures, {
+        skillEnabled,
+        mcpEnabled
+      }));
       if (skillEnabled) await this.hooks.afterInitialSend?.(normalizedQuestion);
       this.assertCurrentRun(currentRunId);
 
@@ -187,7 +206,10 @@ export class PageTaskCoordinator {
       this.state = "failed";
       this.adapter.showStatus(toErrorMessage(error), "error");
     } finally {
-      if (currentRunId === this.runId) this.abortController = null;
+      if (currentRunId === this.runId) {
+        this.abortController = null;
+        this.capabilitySnapshot = null;
+      }
     }
   }
 
@@ -468,6 +490,7 @@ export class PageTaskCoordinator {
   }
 
   private async resolveMcpDetails(runId: number, serviceIds: string[], signal: AbortSignal): Promise<object | null> {
+    if (!this.capabilitySnapshot?.mcpEnabled) throw new Error("当前任务未启用 MCP 能力。");
     if (!this.hooks.mcp) throw new Error("当前页面不能读取 MCP 服务详情。");
     const sessionId = this.adapter.getCurrentSessionId?.();
     if (!sessionId) throw new Error("当前会话尚未建立，不能记录 MCP 详情披露。");
@@ -485,6 +508,7 @@ export class PageTaskCoordinator {
   }
 
   private async resolveMcpToolCall(runId: number, request: McpToolCallRequest, signal: AbortSignal): Promise<object | null> {
+    if (!this.capabilitySnapshot?.mcpEnabled) throw new Error("当前任务未启用 MCP 能力。");
     if (!this.hooks.mcp) throw new Error("当前页面不能调用 MCP Tool。");
     if (!this.hooks.mcp.callTool) throw new Error("当前页面不能调用 MCP Tool。");
     const sessionId = this.adapter.getCurrentSessionId?.();
@@ -573,6 +597,7 @@ export class PageTaskCoordinator {
     this.abortController?.abort(new Error("增强任务已取消。"));
     this.clearReinjectionTimer();
     this.abortController = null;
+    this.capabilitySnapshot = null;
   }
 
   private complete(): void {

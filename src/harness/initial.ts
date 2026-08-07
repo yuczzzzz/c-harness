@@ -4,8 +4,9 @@ import type { SkillMetadata } from "@/skills/contracts";
 import type { SessionToolKnowledgeState } from "@/session-knowledge/state";
 import { formatSessionKnowledgeState } from "@/harness/session-knowledge";
 
-interface InitialHarnessOptions {
-  skillEnabled?: boolean;
+export interface InitialHarnessOptions {
+  skillEnabled: boolean;
+  mcpEnabled: boolean;
 }
 
 /** 构建一条包含规则、当前目录和原始问题的可见 DeepSeek 消息。 */
@@ -15,9 +16,9 @@ export function buildInitialHarness(
   sessionKnowledge?: SessionToolKnowledgeState,
   mcpCatalog: McpServiceCatalogItem[] = [],
   mcpDisclosures: McpSessionDisclosure[] = [],
-  options: InitialHarnessOptions = {}
+  options: InitialHarnessOptions = { skillEnabled: true, mcpEnabled: true }
 ): string {
-  const skillEnabled = options.skillEnabled ?? true;
+  const { skillEnabled, mcpEnabled } = options;
   const skillCatalog = catalog.length === 0
     ? "（当前没有已导入的 Skill）"
     : catalog.map((skill) => `- ${skill.name}：${skill.description}`).join("\n");
@@ -31,9 +32,7 @@ export function buildInitialHarness(
   return [
     "我们按下面的约定完成这次问题：",
     "",
-    skillEnabled
-      ? "正常使用自然语言交流。需要本地 Skill、Reference 或 MCP 时，只能使用显式 Markdown 命令块。一个代码块只放一个请求，正文必须是严格 YAML mapping；同一回复可以有多个相同标签的代码块，但不能混用标签。发出请求后等待我返回真实内容，不要假设读取成功。普通文字、无标签代码块和未知标签代码块都不是读取请求。没有有效读取请求的回复就是最终回答。"
-      : "正常使用自然语言交流。需要 MCP 时，只能使用显式 Markdown 命令块。一个代码块只放一个请求，正文必须是严格 YAML mapping；同一回复可以有多个相同标签的代码块，但不能混用标签。发出请求后等待我返回真实内容，不要假设读取成功。普通文字、无标签代码块和未知标签代码块都不是读取请求。没有有效读取请求的回复就是最终回答。",
+    openingRule(skillEnabled, mcpEnabled),
     "",
     ...(skillEnabled ? [
       skillRule,
@@ -47,28 +46,40 @@ export function buildInitialHarness(
       "```",
       ""
     ] : []),
-    "如需 MCP 服务详情，可按需批量读取；每块正文必须是只包含 server 字段的 YAML mapping。读取详情前不要猜测 Tool Schema，也不要请求或输出 endpoint：",
-    "```mcp",
-    "server: service-id",
-    "```",
-    "",
-    "服务详情披露后，如需调用 MCP Tool，只能使用下面格式；arguments 必须是 YAML mapping，不能使用数组、alias、anchor、tag 或非 JSON 数字。每轮最多一个 mcp-call，且不能混用其他命令。调用前我会要求用户确认：",
-    "```mcp-call",
-    "server: service-id",
-    "tool: tool-name",
-    "arguments:",
-    "  location: Shanghai",
-    "```",
-    "",
+    ...(mcpEnabled ? [
+      "如需 MCP 服务详情，可按需批量读取；每块正文必须是只包含 server 字段的 YAML mapping。读取详情前不要猜测 Tool Schema，也不要请求或输出 endpoint：",
+      "```mcp",
+      "server: service-id",
+      "```",
+      "",
+      "服务详情披露后，如需调用 MCP Tool，只能使用下面格式；arguments 必须是 YAML mapping，不能使用数组、alias、anchor、tag 或非 JSON 数字。每轮最多一个 mcp-call，且不能混用其他命令。调用前我会要求用户确认：",
+      "```mcp-call",
+      "server: service-id",
+      "tool: tool-name",
+      "arguments:",
+      "  location: Shanghai",
+      "```",
+      ""
+    ] : []),
     ...(skillEnabled ? ["当前 Skill 目录：", skillCatalog, ""] : []),
-    "当前 MCP 服务目录：",
-    formatMcpCatalog(mcpCatalog),
-    "",
-    formatMcpSessionDisclosures(mcpDisclosures),
-    "",
+    ...(mcpEnabled ? [
+      "当前 MCP 服务目录：",
+      formatMcpCatalog(mcpCatalog),
+      "",
+      formatMcpSessionDisclosures(mcpDisclosures),
+      ""
+    ] : []),
     ...(skillEnabled && sessionKnowledge ? [formatSessionKnowledgeState(sessionKnowledge), ""] : []),
     "约定到这里。不用复述或确认，直接处理我这次的问题：",
     "",
     question
   ].join("\n");
+}
+
+function openingRule(skillEnabled: boolean, mcpEnabled: boolean): string {
+  const abilities = [
+    ...(skillEnabled ? ["本地 Skill", "Reference"] : []),
+    ...(mcpEnabled ? ["MCP"] : [])
+  ].join("、");
+  return `正常使用自然语言交流。需要${abilities}时，只能使用显式 Markdown 命令块。一个代码块只放一个请求，正文必须是严格 YAML mapping；同一回复可以有多个相同标签的代码块，但不能混用标签。发出请求后等待我返回真实内容，不要假设读取成功。普通文字、无标签代码块和未知标签代码块都不是读取请求。没有有效读取请求的回复就是最终回答。`;
 }

@@ -74,8 +74,31 @@ function stubRuntime(requests: unknown[]): void {
             data: { skillEnabled: true, reinjectionDelayMinSeconds: 0, reinjectionDelayMaxSeconds: 0 }
           };
         }
-        if (request.type === "catalog.get") return { ok: true, data: [] };
-        if (request.type === "mcp.serviceCatalog.get") return { ok: true, data: [] };
+        if (request.type === "catalog.get") {
+          return {
+            ok: true,
+            data: [{
+              name: "writer",
+              description: "Write",
+              referenceCount: 1,
+              packageBytes: 100,
+              savedBytes: 80,
+              ignoredEntryCount: 0,
+              importedAt: "2026-08-07T00:00:00.000Z"
+            }]
+          };
+        }
+        if (request.type === "mcp.serviceCatalog.get") {
+          return {
+            ok: true,
+            data: [{
+              serviceId: "weather",
+              displayName: "Weather Tools",
+              description: "天气查询",
+              toolCount: 1
+            }]
+          };
+        }
         if (request.type === "mcp.session.disclosures.get") return { ok: true, data: [] };
         if (request.type === "skill.readBatch") {
           return { ok: true, data: [{ skillName: "writer", content: "body", byteLength: 4 }] };
