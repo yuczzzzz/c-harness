@@ -6,7 +6,7 @@ import { MCP_LIMITS, type McpServiceDetails, type McpToolCallResult, type McpToo
 /** 连接 MCP Streamable HTTP 服务并读取完整 Tool 详情。 */
 export async function discoverMcpEndpoint(endpoint: string): Promise<McpServiceDetails> {
   const client = new Client(
-    { name: "c-harness", version: "0.1.0" },
+    { name: "c-harness", version: "0.1.1" },
     {
       versionNegotiation: { mode: "auto" },
       listMaxPages: MCP_LIMITS.maxToolsPerService
@@ -56,7 +56,7 @@ export async function callMcpEndpointTool(
   args: Record<string, unknown>
 ): Promise<McpToolCallResult> {
   const client = new Client(
-    { name: "c-harness", version: "0.1.0" },
+    { name: "c-harness", version: "0.1.1" },
     { versionNegotiation: { mode: "auto" } }
   );
   const transport = new StreamableHTTPClientTransport(new URL(endpoint));
