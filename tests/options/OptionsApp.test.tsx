@@ -154,6 +154,21 @@ describe("OptionsApp", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Failed to fetch");
   });
 
+  it("warns when multiple local environment MCP services match and shows the selected service", async () => {
+    window.history.replaceState(null, "", "#/mcp");
+    render(<OptionsApp client={clientFor([])} mcpClient={mcpClientFor([
+      mcpRecord("codex-b", "http://127.0.0.1:3001/mcp", { serverName: "codexpro", serverTitle: "Bravo" }),
+      mcpRecord("codex-a", "http://127.0.0.1:3000/mcp", { serverName: "CodexPro", serverTitle: "Alpha" }),
+      mcpRecord("weather", "http://127.0.0.1:3002/mcp", { serverName: "weather" })
+    ])} />);
+
+    expect(await screen.findByRole("heading", { name: "本地环境 MCP 命中多个服务" })).toBeVisible();
+    expect(screen.getByText("当前 Harness 将使用 Alpha（codex-a）。")).toBeVisible();
+    expect(screen.getAllByText("codex-a").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("codex-b").length).toBeGreaterThan(0);
+    expect(screen.getByText("weather")).toBeVisible();
+  });
+
   it("renders legacy MCP records returned by an older service worker", async () => {
     const legacyService = mcpRecord("weather", "http://127.0.0.1:3000/mcp") as Partial<McpServiceRecord>;
     delete legacyService.detectionStatus;
@@ -382,13 +397,18 @@ function settingsClientFor(skillEnabled: boolean, minSeconds = 1, maxSeconds = 3
   };
 }
 
-function mcpRecord(serviceId: string, endpoint: string): McpServiceRecord {
+function mcpRecord(
+  serviceId: string,
+  endpoint: string,
+  identity: { serverName?: string; serverTitle?: string } = {}
+): McpServiceRecord {
   return {
     recordId: serviceId,
     serviceId,
     endpoint,
     permissionOrigin: "http://127.0.0.1:3000",
-    serverName: serviceId,
+    serverName: identity.serverName ?? serviceId,
+    serverTitle: identity.serverTitle,
     description: "Weather tools",
     toolCount: 1,
     detailSummary: "summary",

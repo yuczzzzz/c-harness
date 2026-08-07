@@ -603,6 +603,7 @@ describe("PageTaskCoordinator", () => {
     ];
     const loadMcpCatalog = vi.fn().mockResolvedValue([{
       serviceId: "weather",
+      serverName: "weather",
       displayName: "Weather Tools",
       description: "天气查询",
       toolCount: 1
@@ -1125,6 +1126,7 @@ function skillCatalog(): SkillMetadata[] {
 function mcpCatalog(): McpServiceCatalogItem[] {
   return [{
     serviceId: "weather",
+    serverName: "weather",
     displayName: "Weather Tools",
     description: "天气查询",
     toolCount: 1

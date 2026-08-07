@@ -45,6 +45,7 @@ describe("initial harness", () => {
   it("lists MCP catalog and disclosed state without endpoint or tool schemas", () => {
     const harness = buildInitialHarness([], "问题", undefined, [{
       serviceId: "weather",
+      serverName: "weather",
       displayName: "Weather Tools",
       description: "天气查询",
       toolCount: 2
@@ -69,6 +70,7 @@ describe("initial harness", () => {
       metadataFor("writing", "写作支持")
     ], "问题", emptySessionToolKnowledgeState(), [{
       serviceId: "weather",
+      serverName: "weather",
       displayName: "Weather Tools",
       description: "天气查询",
       toolCount: 1
@@ -89,6 +91,7 @@ describe("initial harness", () => {
       metadataFor("writing", "写作支持")
     ], "问题", undefined, [{
       serviceId: "weather",
+      serverName: "weather",
       displayName: "Weather Tools",
       description: "天气查询",
       toolCount: 1
@@ -101,6 +104,24 @@ describe("initial harness", () => {
     expect(harness).not.toContain("当前 MCP 服务目录");
     expect(harness).not.toContain("```mcp");
     expect(harness).not.toContain("weather");
+  });
+
+  it("adds the local environment prompt without exposing endpoint or schemas", () => {
+    const harness = buildInitialHarness([
+      metadataFor("writer", "写作支持")
+    ], "问题", undefined, [{
+      serviceId: "codexpro-local",
+      serverName: "CodexPro",
+      serverTitle: "CodexPro Local",
+      displayName: "CodexPro Local",
+      description: "本地工作区",
+      toolCount: 3
+    }], [], { skillEnabled: true, mcpEnabled: true });
+
+    expect(harness).toContain("使用CodexPro Local从本地环境获取。");
+    expect(harness).toContain("在获取任何 Skill 前，必须先与我确认 Skill 来源");
+    expect(harness).not.toContain("http://127.0.0.1:3000/mcp");
+    expect(harness).not.toContain("inputSchema");
   });
 });
 

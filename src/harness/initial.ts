@@ -1,5 +1,6 @@
 import type { McpServiceCatalogItem, McpSessionDisclosure } from "@/mcp/contracts";
 import { formatMcpCatalog, formatMcpSessionDisclosures } from "@/mcp/format";
+import { displayLocalEnvironmentMcpName, selectLocalEnvironmentMcp } from "@/mcp/local-environment";
 import type { SkillMetadata } from "@/skills/contracts";
 import type { SessionToolKnowledgeState } from "@/session-knowledge/state";
 import { formatSessionKnowledgeState } from "@/harness/session-knowledge";
@@ -19,6 +20,7 @@ export function buildInitialHarness(
   options: InitialHarnessOptions = { skillEnabled: true, mcpEnabled: true }
 ): string {
   const { skillEnabled, mcpEnabled } = options;
+  const localEnvironmentMcp = mcpEnabled ? selectLocalEnvironmentMcp(mcpCatalog).selected : null;
   const skillCatalog = catalog.length === 0
     ? "（当前没有已导入的 Skill）"
     : catalog.map((skill) => `- ${skill.name}：${skill.description}`).join("\n");
@@ -59,6 +61,11 @@ export function buildInitialHarness(
       "arguments:",
       "  location: Shanghai",
       "```",
+      ""
+    ] : []),
+    ...(localEnvironmentMcp ? [
+      `当我提到文件/本地/工作区/发送了文件目录，或者需要读写本地文件/Skill 时，使用${displayLocalEnvironmentMcpName(localEnvironmentMcp)}从本地环境获取。`,
+      ...(skillEnabled ? ["在获取任何 Skill 前，必须先与我确认 Skill 来源；来源确认前不得发送任何 Harness 命令，只能先进行来源确认。"] : []),
       ""
     ] : []),
     ...(skillEnabled ? ["当前 Skill 目录：", skillCatalog, ""] : []),

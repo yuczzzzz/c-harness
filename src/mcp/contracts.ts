@@ -49,6 +49,8 @@ export interface McpServiceRecord {
 
 export interface McpServiceCatalogItem {
   serviceId: string;
+  serverName: string;
+  serverTitle?: string;
   displayName: string;
   description: string;
   toolCount: number;

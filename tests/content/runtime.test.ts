@@ -93,6 +93,7 @@ function stubRuntime(requests: unknown[]): void {
             ok: true,
             data: [{
               serviceId: "weather",
+              serverName: "weather",
               displayName: "Weather Tools",
               description: "天气查询",
               toolCount: 1

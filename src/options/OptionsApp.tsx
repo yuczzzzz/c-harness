@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, FileArchive, PlugZap, RefreshCw, Save, Searc
 import { type ChangeEvent, type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { McpServiceRecord } from "@/mcp/contracts";
+import { displayLocalEnvironmentMcpName, selectLocalEnvironmentMcp } from "@/mcp/local-environment";
 import {
   createMcpServiceClient,
   createGeneralSettingsClient,
@@ -481,6 +482,7 @@ function McpManagementPage({ client }: { client: McpServiceClient }) {
   const [detectingServiceId, setDetectingServiceId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+  const localEnvironmentMcp = useMemo(() => selectLocalEnvironmentMcp(services), [services]);
 
   const refresh = useCallback(async () => {
     try {
@@ -577,6 +579,21 @@ function McpManagementPage({ client }: { client: McpServiceClient }) {
       </section>
 
       {error && <p className="global-error" role="alert">{error}</p>}
+
+      {localEnvironmentMcp.matches.length > 1 && localEnvironmentMcp.selected && (
+        <section className="mcp-local-warning" aria-labelledby="mcp-local-warning-title">
+          <h2 id="mcp-local-warning-title">本地环境 MCP 命中多个服务</h2>
+          <p>当前 Harness 将使用 {displayLocalEnvironmentMcpName(localEnvironmentMcp.selected)}（{localEnvironmentMcp.selected.serviceId}）。</p>
+          <ul>
+            {localEnvironmentMcp.matches.map((service) => (
+              <li key={service.serviceId}>
+                <strong>{displayLocalEnvironmentMcpName(service)}</strong>
+                <span>{service.serviceId}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="library-section" aria-labelledby="mcp-library-title">
         <h2 id="mcp-library-title">MCP 服务</h2>
