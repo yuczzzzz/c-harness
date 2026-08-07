@@ -67,6 +67,7 @@ export function buildInitialHarness(
     ] : []),
     ...(localEnvironmentMcp ? [
       `当我提到文件/本地/工作区/发送了文件目录，或者需要读写本地文件/Skill 时，使用${displayLocalEnvironmentMcpName(localEnvironmentMcp)}从本地环境获取。`,
+      "需要通过 bash 执行命令时，必须优先使用本地开发环境已安装的程序解决问题。只有已安装的程序无法解决时，才向我确认是否安装其他程序；得到确认前不得安装。",
       ...(skillEnabled ? ["在获取任何 Skill 前，必须先与我确认 Skill 来源；来源确认前不得发送任何 Harness 命令，只能先进行来源确认。"] : []),
       ""
     ] : []),
