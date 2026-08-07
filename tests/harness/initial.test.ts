@@ -58,7 +58,9 @@ describe("initial harness", () => {
 
     expect(harness).toContain("```mcp\nserver: service-id\n```");
     expect(harness).toContain("```mcp-call");
-    expect(harness).toContain("arguments:\n  location: Shanghai");
+    expect(harness).toContain("多行字符串必须使用 YAML 块标量 `|`");
+    expect(harness).toContain("禁止在单引号或双引号字符串中直接换行");
+    expect(harness).toContain("arguments:\n  command: |\n    first command\n    second command");
     expect(harness).toContain("- weather：Weather Tools；天气查询；2 个 Tool");
     expect(harness).toContain("- weather：Weather Tools；摘要 abcdef123456");
     expect(harness).not.toContain("http://127.0.0.1:3000/mcp");
