@@ -85,8 +85,8 @@ describe("background runtime", () => {
       optionsSender("#/general")
     );
 
-    expect(optionsRead).toEqual({ ok: true, data: expect.objectContaining({ skillEnabled: true }) });
-    expect(chatRead).toEqual({ ok: true, data: expect.objectContaining({ skillEnabled: true }) });
+    expect(optionsRead).toEqual({ ok: true, data: expect.objectContaining({ skillEnabled: false }) });
+    expect(chatRead).toEqual({ ok: true, data: expect.objectContaining({ skillEnabled: false }) });
     expect(chatUpdate).toEqual({ ok: false, error: "只有扩展管理页可以修改通用设置。" });
     expect(optionsUpdate).toEqual({ ok: true, data: expect.objectContaining({ skillEnabled: false }) });
     expect(chatDelayUpdate).toEqual({ ok: false, error: "只有扩展管理页可以修改通用设置。" });
@@ -98,6 +98,20 @@ describe("background runtime", () => {
         reinjectionDelayMaxSeconds: 4
       }
     });
+  });
+
+  it("persists Skill disabled when deleting the last Skill", async () => {
+    await replaceSkill(packageFor("writer"));
+    await updateSkillEnabled(true);
+
+    const response = await handleRuntimeRequest(
+      { type: "skill.delete", skillName: "writer" },
+      optionsSender("#/skills")
+    );
+    const settings = await handleRuntimeRequest({ type: "settings.get" }, optionsSender("#/skills"));
+
+    expect(response).toEqual({ ok: true, data: undefined });
+    expect(settings).toEqual({ ok: true, data: expect.objectContaining({ skillEnabled: false }) });
   });
 
   it("adds and lists an MCP service from the options page", async () => {
@@ -342,6 +356,7 @@ describe("background runtime", () => {
   it("reads a complete Skill batch from a trusted DeepSeek tab in request order", async () => {
     await replaceSkill(packageFor("writer"));
     await replaceSkill(packageFor("eval-design"));
+    await updateSkillEnabled(true);
 
     const response = await handleRuntimeRequest(
       { type: "skill.readBatch", skillNames: ["writer", "eval-design"] },
@@ -359,6 +374,7 @@ describe("background runtime", () => {
 
   it("allows the same read-only requests from a trusted z.ai tab", async () => {
     await replaceSkill(packageWithReferences("writer", { "references/a.md": "alpha" }));
+    await updateSkillEnabled(true);
 
     const catalog = await handleRuntimeRequest({ type: "catalog.get" }, zaiSender());
     const skills = await handleRuntimeRequest(
@@ -464,6 +480,7 @@ describe("background runtime", () => {
     ["duplicate names", deepSeekSender(), ["writer", "writer"]]
   ])("rejects Skill batch reads from or containing %s", async (_label, sender, skillNames) => {
     await replaceSkill(packageFor("writer"));
+    await updateSkillEnabled(true);
 
     const response = await handleRuntimeRequest({ type: "skill.readBatch", skillNames }, sender);
 
@@ -473,6 +490,7 @@ describe("background runtime", () => {
   it("rejects the whole batch when one Skill has no persisted SKILL.md", async () => {
     await replaceSkill(packageFor("writer"));
     await replaceSkill(packageFor("eval-design"));
+    await updateSkillEnabled(true);
     const database = await openSkillDatabase();
     await database.delete("skillFiles", ["eval-design", "SKILL.md"]);
 
@@ -487,6 +505,7 @@ describe("background runtime", () => {
 
   it("rejects the whole batch when SKILL.md content exceeds the task limit", async () => {
     await replaceSkill(packageFor("large", "x".repeat(200 * 1024 + 1)));
+    await updateSkillEnabled(true);
 
     const response = await handleRuntimeRequest(
       { type: "skill.readBatch", skillNames: ["large"] },
@@ -502,6 +521,7 @@ describe("background runtime", () => {
       "references/a.md": "alpha",
       "references/b.md": "beta"
     }));
+    await updateSkillEnabled(true);
 
     const response = await handleRuntimeRequest({
       type: "reference.readBatch",
@@ -524,6 +544,7 @@ describe("background runtime", () => {
     ["a path outside references", deepSeekSender(), ["writer"], ["writer/SKILL.md"]]
   ])("rejects Reference batches containing %s", async (_label, sender, selectedSkillNames, virtualPaths) => {
     await replaceSkill(packageWithReferences("writer", { "references/a.md": "alpha" }));
+    await updateSkillEnabled(true);
 
     const response = await handleRuntimeRequest({
       type: "reference.readBatch",
@@ -537,6 +558,7 @@ describe("background runtime", () => {
 
   it("rejects the whole Reference batch when one file is absent", async () => {
     await replaceSkill(packageWithReferences("writer", { "references/a.md": "alpha" }));
+    await updateSkillEnabled(true);
 
     const response = await handleRuntimeRequest({
       type: "reference.readBatch",
@@ -552,6 +574,7 @@ describe("background runtime", () => {
     await replaceSkill(packageWithReferences("writer", {
       "references/large.md": "x".repeat(200 * 1024)
     }));
+    await updateSkillEnabled(true);
 
     const response = await handleRuntimeRequest({
       type: "reference.readBatch",

@@ -174,6 +174,36 @@ h2 { margin: 0; font-size: 18px; }
 .result-list li[data-status="cancelled"] { border-left: 3px solid #9aa0a6; }
 .global-error { padding: 12px 14px; border-left: 3px solid #b3261e; background: #fce8e6; color: #8c1d18; }
 .global-success { padding: 12px 14px; border-left: 3px solid #188038; background: #d1e7dd; color: #0f5132; }
+.mcp-local-warning {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px;
+  border-left: 3px solid #b06000;
+  background: #fff4e5;
+  color: #3c4043;
+}
+.mcp-local-warning p { margin: 0; font-size: 14px; }
+.mcp-local-warning ul {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #ead8bf;
+  border-radius: 5px;
+  overflow: hidden;
+  list-style: none;
+  background: #ead8bf;
+}
+.mcp-local-warning li {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.45fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 10px;
+  background: #fffaf2;
+  font-size: 13px;
+}
+.mcp-local-warning span { overflow-wrap: anywhere; color: #5f6368; }
 
 .general-form { display: grid; gap: 18px; padding-top: 24px; }
 .form-row {

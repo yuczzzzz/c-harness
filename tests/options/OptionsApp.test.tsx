@@ -154,6 +154,21 @@ describe("OptionsApp", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Failed to fetch");
   });
 
+  it("warns when multiple local environment MCP services match and shows the selected service", async () => {
+    window.history.replaceState(null, "", "#/mcp");
+    render(<OptionsApp client={clientFor([])} mcpClient={mcpClientFor([
+      mcpRecord("codex-b", "http://127.0.0.1:3001/mcp", { serverName: "codexpro", serverTitle: "Bravo" }),
+      mcpRecord("codex-a", "http://127.0.0.1:3000/mcp", { serverName: "CodexPro", serverTitle: "Alpha" }),
+      mcpRecord("weather", "http://127.0.0.1:3002/mcp", { serverName: "weather" })
+    ])} />);
+
+    expect(await screen.findByRole("heading", { name: "本地环境 MCP 命中多个服务" })).toBeVisible();
+    expect(screen.getByText("当前 Harness 将使用 Alpha（codex-a）。")).toBeVisible();
+    expect(screen.getAllByText("codex-a").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("codex-b").length).toBeGreaterThan(0);
+    expect(screen.getByText("weather")).toBeVisible();
+  });
+
   it("renders legacy MCP records returned by an older service worker", async () => {
     const legacyService = mcpRecord("weather", "http://127.0.0.1:3000/mcp") as Partial<McpServiceRecord>;
     delete legacyService.detectionStatus;
@@ -184,12 +199,30 @@ describe("OptionsApp", () => {
     expect(await screen.findByText("Design reliable evals")).toBeVisible();
   });
 
-  it("loads and immediately saves the Skill feature switch without changing import behavior", async () => {
+  it("disables the Skill feature switch for an empty library and keeps first import off", async () => {
     const user = userEvent.setup();
     const catalog: SkillMetadata[] = [];
     const client = clientFor(catalog);
-    const settingsClient = settingsClientFor(true);
+    const settingsClient = settingsClientFor(false);
     renderSkillsPage(client, settingsClient);
+
+    const switchInput = await screen.findByRole("checkbox", { name: /已停用/ });
+    expect(switchInput).not.toBeChecked();
+    expect(switchInput).toBeDisabled();
+
+    const zip = await createTestZip([{ name: "SKILL.md", content: validSkillMarkdown() }]);
+    await user.upload(screen.getByLabelText("选择 ZIP", { selector: "input" }), zip);
+
+    await waitFor(() => expect(client.replace).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("checkbox", { name: /已停用/ })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /已停用/ })).toBeEnabled();
+    expect(settingsClient.updateSkillEnabled).not.toHaveBeenCalled();
+  });
+
+  it("loads and saves the Skill feature switch when the library is non-empty", async () => {
+    const user = userEvent.setup();
+    const settingsClient = settingsClientFor(true);
+    renderSkillsPage(clientFor([metadata("writer", "Write")]), settingsClient);
 
     const switchInput = await screen.findByRole("checkbox", { name: /已启用/ });
     expect(switchInput).toBeChecked();
@@ -198,18 +231,13 @@ describe("OptionsApp", () => {
 
     await waitFor(() => expect(settingsClient.updateSkillEnabled).toHaveBeenCalledWith(false));
     expect(await screen.findByRole("checkbox", { name: /已停用/ })).not.toBeChecked();
-
-    const zip = await createTestZip([{ name: "SKILL.md", content: validSkillMarkdown() }]);
-    await user.upload(screen.getByLabelText("选择 ZIP", { selector: "input" }), zip);
-
-    await waitFor(() => expect(client.replace).toHaveBeenCalledOnce());
   });
 
   it("rolls the Skill feature switch back when saving fails", async () => {
     const user = userEvent.setup();
     const settingsClient = settingsClientFor(true);
     settingsClient.updateSkillEnabled.mockRejectedValueOnce(new Error("保存失败"));
-    renderSkillsPage(clientFor([]), settingsClient);
+    renderSkillsPage(clientFor([metadata("writer", "Write")]), settingsClient);
 
     const switchInput = await screen.findByRole("checkbox", { name: /已启用/ });
     await user.click(switchInput);
@@ -244,6 +272,7 @@ describe("OptionsApp", () => {
 
     await waitFor(() => expect(client.delete).toHaveBeenCalledWith("writer"));
     await waitFor(() => expect(screen.queryByText("Write clearly")).not.toBeInTheDocument());
+    expect(await screen.findByRole("checkbox", { name: /已停用/ })).toBeDisabled();
   });
 
   it("paginates Skills by five and filters by title or description", async () => {
@@ -368,13 +397,18 @@ function settingsClientFor(skillEnabled: boolean, minSeconds = 1, maxSeconds = 3
   };
 }
 
-function mcpRecord(serviceId: string, endpoint: string): McpServiceRecord {
+function mcpRecord(
+  serviceId: string,
+  endpoint: string,
+  identity: { serverName?: string; serverTitle?: string } = {}
+): McpServiceRecord {
   return {
     recordId: serviceId,
     serviceId,
     endpoint,
     permissionOrigin: "http://127.0.0.1:3000",
-    serverName: serviceId,
+    serverName: identity.serverName ?? serviceId,
+    serverTitle: identity.serverTitle,
     description: "Weather tools",
     toolCount: 1,
     detailSummary: "summary",

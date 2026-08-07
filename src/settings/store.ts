@@ -69,7 +69,7 @@ export async function resetSettingsDatabaseConnection(): Promise<void> {
 
 function normalizeGeneralSettings(value: Partial<GeneralSettings> | undefined): GeneralSettings {
   return validateGeneralSettings({
-    skillEnabled: typeof value?.skillEnabled === "boolean" ? value.skillEnabled : true,
+    skillEnabled: typeof value?.skillEnabled === "boolean" ? value.skillEnabled : false,
     reinjectionDelayMinSeconds: typeof value?.reinjectionDelayMinSeconds === "number" ? value.reinjectionDelayMinSeconds : 1,
     reinjectionDelayMaxSeconds: typeof value?.reinjectionDelayMaxSeconds === "number" ? value.reinjectionDelayMaxSeconds : 3
   });

@@ -17,10 +17,9 @@ export interface McpTaskCoordinatorOutput {
   serviceIds: string[];
 }
 
-export interface McpToolCallOutcome {
-  result: McpToolCallResult;
-  prompted: boolean;
-}
+export type McpToolCallOutcome =
+  | { kind: "denied" }
+  | { kind: "executed"; prompted: boolean; result: McpToolCallResult };
 
 /** 协调 MCP 详情披露，统一执行读取、提交和反馈格式化。 */
 export class McpTaskCoordinator {
@@ -43,21 +42,9 @@ export class McpTaskCoordinator {
     if (!trusted) {
       prompted = true;
       const decision = await this.deps.confirmToolCall?.(request) ?? "deny";
-      if (decision === "deny") {
-        return {
-          prompted,
-          result: {
-            serviceId: request.serviceId,
-            toolName: request.toolName,
-            content: "用户拒绝了这次 MCP Tool 调用。",
-            contentType: "text",
-            isError: true,
-            detailSummary: ""
-          }
-        };
-      }
+      if (decision === "deny") return { kind: "denied" };
       if (decision === "trust_session") await this.deps.commitSessionTrust?.(request.serviceId);
     }
-    return { prompted, result: await this.deps.callTool(request) };
+    return { kind: "executed", prompted, result: await this.deps.callTool(request) };
   }
 }

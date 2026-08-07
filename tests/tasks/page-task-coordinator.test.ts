@@ -1,13 +1,15 @@
 import type { SiteTaskPort } from "@/tasks/page-task-coordinator";
 import { PageTaskCoordinator } from "@/tasks/page-task-coordinator";
 import { emptySessionToolKnowledgeState } from "@/deepseek/session-tool-knowledge";
+import type { McpServiceCatalogItem } from "@/mcp/contracts";
+import type { SkillMetadata } from "@/skills/contracts";
 
 describe("PageTaskCoordinator", () => {
   beforeEach(() => {
     document.body.innerHTML = '<textarea name="search"></textarea><div id="send"></div><a id="conversation"></a>';
   });
 
-  it("intercepts Enter and sends one visible enhanced message", async () => {
+  it("intercepts Enter and sends the original question when no capability is effective", async () => {
     const adapter = new FakeAdapter();
     adapter.question = "  原始问题  ";
     const loadCatalog = vi.fn().mockResolvedValue([]);
@@ -20,17 +22,15 @@ describe("PageTaskCoordinator", () => {
     await vi.waitFor(() => expect(coordinator.currentState).toBe("completed"));
     expect(event.defaultPrevented).toBe(true);
     expect(loadCatalog).toHaveBeenCalledOnce();
-    expect(adapter.sentMessages).toHaveLength(1);
-    expect(adapter.sentMessages[0]).toContain("原始问题");
-    expect(adapter.sentMessages[0]).toContain("（当前没有已导入的 Skill）");
-    expect(adapter.waitedFromCursor).not.toBeNull();
+    expect(adapter.sentMessages).toEqual(["原始问题"]);
+    expect(adapter.waitedFromCursor).toBeNull();
   });
 
   it("does not turn its own real send-control click into another task", async () => {
     const adapter = new FakeAdapter();
     adapter.question = "问题";
     adapter.clickDuringSend = true;
-    const loadCatalog = vi.fn().mockResolvedValue([]);
+    const loadCatalog = vi.fn().mockResolvedValue(skillCatalog());
     const coordinator = new PageTaskCoordinator(adapter, loadCatalog, vi.fn(), vi.fn(), document);
     coordinator.install();
 
@@ -45,7 +45,7 @@ describe("PageTaskCoordinator", () => {
     const adapter = new FakeAdapter();
     adapter.question = "人工问题";
     adapter.clickDuringSend = true;
-    const loadCatalog = vi.fn().mockResolvedValue([]);
+    const loadCatalog = vi.fn().mockResolvedValue(skillCatalog());
     const coordinator = new PageTaskCoordinator(adapter, loadCatalog, vi.fn(), vi.fn(), document);
     coordinator.install();
 
@@ -128,7 +128,7 @@ describe("PageTaskCoordinator", () => {
     const onStopControlClick = vi.fn();
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn(),
       vi.fn(),
       document,
@@ -203,7 +203,7 @@ describe("PageTaskCoordinator", () => {
       { skillName: "writer", content: "writer body", byteLength: 11 },
       { skillName: "eval-design", content: "eval body", byteLength: 9 }
     ]);
-    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue([]), readSkillBatch, vi.fn(), document);
+    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue(skillCatalog()), readSkillBatch, vi.fn(), document);
 
     const task = coordinator.startQuestion("问题");
 
@@ -235,7 +235,7 @@ describe("PageTaskCoordinator", () => {
     ]);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       readSkillBatch,
       readReferenceBatch,
       document
@@ -267,7 +267,7 @@ describe("PageTaskCoordinator", () => {
     ]);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       readSkillBatch,
       readReferenceBatch,
       document
@@ -289,7 +289,7 @@ describe("PageTaskCoordinator", () => {
     const readReferenceBatch = vi.fn();
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       readSkillBatch,
       readReferenceBatch,
       document
@@ -314,7 +314,7 @@ describe("PageTaskCoordinator", () => {
       .mockResolvedValueOnce([{ skillName: "writer", content: "body", byteLength: 4 }]);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       readSkillBatch,
       vi.fn(),
       document
@@ -333,7 +333,7 @@ describe("PageTaskCoordinator", () => {
     adapter.answers = ["```read\npath: writer/references/a.md\n```", "```read\npath: writer/references/a.md\n```"];
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn(),
       vi.fn(),
       document
@@ -362,7 +362,7 @@ describe("PageTaskCoordinator", () => {
       .mockResolvedValueOnce([{ virtualPath: "writer/references/a.md", content: "alpha", byteLength: 5 }]);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       readSkillBatch,
       readReferenceBatch,
       document
@@ -386,7 +386,7 @@ describe("PageTaskCoordinator", () => {
     ];
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn().mockResolvedValue([{ skillName: "writer", content: "body", byteLength: 4 }]),
       vi.fn(),
       document
@@ -411,7 +411,7 @@ describe("PageTaskCoordinator", () => {
     ]);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn().mockResolvedValue([{ skillName: "writer", content: "body", byteLength: 4 }]),
       readReferenceBatch,
       document
@@ -428,7 +428,7 @@ describe("PageTaskCoordinator", () => {
     const adapter = new FakeAdapter();
     adapter.answers = [new Promise<string>(() => {})];
     adapter.stopMode = true;
-    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue([]), vi.fn(), vi.fn(), document);
+    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue(skillCatalog()), vi.fn(), vi.fn(), document);
     coordinator.install();
 
     const task = coordinator.startQuestion("问题");
@@ -443,7 +443,7 @@ describe("PageTaskCoordinator", () => {
   it("cancels an active task when the user opens another conversation", async () => {
     const adapter = new FakeAdapter();
     adapter.answers = [new Promise<string>(() => {})];
-    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue([]), vi.fn(), vi.fn(), document);
+    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue(skillCatalog()), vi.fn(), vi.fn(), document);
     coordinator.install();
     adapter.conversationNavigation = true;
 
@@ -459,7 +459,7 @@ describe("PageTaskCoordinator", () => {
   it("fails immediately when the native internal send throws and does not retry", async () => {
     const adapter = new FakeAdapter();
     adapter.sendError = new Error("发送控件失效。");
-    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue([]), vi.fn(), vi.fn(), document);
+    const coordinator = new PageTaskCoordinator(adapter, vi.fn().mockResolvedValue(skillCatalog()), vi.fn(), vi.fn(), document);
 
     await coordinator.startQuestion("问题");
 
@@ -473,7 +473,7 @@ describe("PageTaskCoordinator", () => {
     adapter.onWait = () => order.push("wait");
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn(),
       vi.fn(),
       document,
@@ -501,7 +501,7 @@ describe("PageTaskCoordinator", () => {
       ];
       const coordinator = new PageTaskCoordinator(
         adapter,
-        vi.fn().mockResolvedValue([]),
+        vi.fn().mockResolvedValue(skillCatalog()),
         readSkillBatch,
         vi.fn(),
         document,
@@ -536,7 +536,7 @@ describe("PageTaskCoordinator", () => {
       adapter.answers = ["```skill\nname: writer\n```", "最终回答"];
       const coordinator = new PageTaskCoordinator(
         adapter,
-        vi.fn().mockResolvedValue([]),
+        vi.fn().mockResolvedValue(skillCatalog()),
         readSkillBatch,
         vi.fn(),
         document,
@@ -570,7 +570,7 @@ describe("PageTaskCoordinator", () => {
       adapter.answers = ["```skill\nname: writer\n```", "最终回答"];
       const coordinator = new PageTaskCoordinator(
         adapter,
-        vi.fn().mockResolvedValue([]),
+        vi.fn().mockResolvedValue(skillCatalog()),
         readSkillBatch,
         vi.fn(),
         document,
@@ -603,6 +603,7 @@ describe("PageTaskCoordinator", () => {
     ];
     const loadMcpCatalog = vi.fn().mockResolvedValue([{
       serviceId: "weather",
+      serverName: "weather",
       displayName: "Weather Tools",
       description: "天气查询",
       toolCount: 1
@@ -615,7 +616,7 @@ describe("PageTaskCoordinator", () => {
     const commitDisclosures = vi.fn().mockResolvedValue(undefined);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn().mockResolvedValue([{ skillName: "writer", content: "Skill body", byteLength: 10 }]),
       vi.fn(),
       document,
@@ -670,8 +671,7 @@ describe("PageTaskCoordinator", () => {
     expect(loadCatalog).not.toHaveBeenCalled();
     expect(loadInitialState).not.toHaveBeenCalled();
     expect(afterInitialSend).not.toHaveBeenCalled();
-    expect(adapter.sentMessages[0]).not.toContain("```skill");
-    expect(adapter.sentMessages[0]).not.toContain("当前 Skill 目录");
+    expect(adapter.sentMessages).toEqual(["问题"]);
     expect(coordinator.currentState).toBe("completed");
   });
 
@@ -695,6 +695,12 @@ describe("PageTaskCoordinator", () => {
           const skillEnabled = enabled;
           enabled = true;
           return { skillEnabled, reinjectionDelayMinSeconds: 0, reinjectionDelayMaxSeconds: 0 };
+        },
+        mcp: {
+          loadCatalog: vi.fn().mockResolvedValue(mcpCatalog()),
+          loadDisclosures: vi.fn().mockResolvedValue([]),
+          loadDetailsBatch: vi.fn(),
+          commitDisclosures: vi.fn()
         }
       }
     );
@@ -720,7 +726,13 @@ describe("PageTaskCoordinator", () => {
       vi.fn(),
       document,
       {
-        loadSettings: async () => ({ skillEnabled: false, reinjectionDelayMinSeconds: 0, reinjectionDelayMaxSeconds: 0 })
+        loadSettings: async () => ({ skillEnabled: false, reinjectionDelayMinSeconds: 0, reinjectionDelayMaxSeconds: 0 }),
+        mcp: {
+          loadCatalog: vi.fn().mockResolvedValue(mcpCatalog()),
+          loadDisclosures: vi.fn().mockResolvedValue([]),
+          loadDetailsBatch: vi.fn(),
+          commitDisclosures: vi.fn()
+        }
       }
     );
 
@@ -741,7 +753,7 @@ describe("PageTaskCoordinator", () => {
     ];
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn().mockResolvedValue([{ skillName: "writer", content: "Skill body", byteLength: 10 }]),
       vi.fn(),
       document
@@ -750,7 +762,7 @@ describe("PageTaskCoordinator", () => {
     await coordinator.startQuestion("问题");
 
     expect(adapter.sentMessages[1]).toContain("这批 mcp 请求的写法不对，我没有读取。");
-    expect(adapter.sentMessages[1]).toContain("当前页面不能读取 MCP 服务详情。");
+    expect(adapter.sentMessages[1]).toContain("当前任务未启用 MCP 能力。");
     expect(coordinator.currentState).toBe("completed");
   });
 
@@ -767,7 +779,7 @@ describe("PageTaskCoordinator", () => {
     const committed = vi.fn().mockResolvedValue(undefined);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn(),
       readReferenceBatch,
       document,
@@ -795,7 +807,7 @@ describe("PageTaskCoordinator", () => {
     const committed = vi.fn().mockResolvedValue(undefined);
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       readSkillBatch,
       readReferenceBatch,
       document,
@@ -834,14 +846,14 @@ describe("PageTaskCoordinator", () => {
     });
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn(),
       vi.fn(),
       document,
       {
         progressiveKnowledge: { loadInitialState: async () => emptySessionToolKnowledgeState(), onFeedbackCommitted: vi.fn() },
         mcp: {
-          loadCatalog: vi.fn().mockResolvedValue([]),
+          loadCatalog: vi.fn().mockResolvedValue(mcpCatalog()),
           loadDisclosures: vi.fn().mockResolvedValue([]),
           loadDetailsBatch: vi.fn(),
           commitDisclosures: vi.fn(),
@@ -865,6 +877,83 @@ describe("PageTaskCoordinator", () => {
     expect(coordinator.currentState).toBe("completed");
   });
 
+  it.each([
+    {
+      phase: "Skill 阶段",
+      answers: [mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: true,
+      expectedWaitCount: 1,
+      expectedSentMessageCount: 1
+    },
+    {
+      phase: "Reference 阶段",
+      answers: ["```skill\nname: writer\n```", mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: true,
+      expectedWaitCount: 2,
+      expectedSentMessageCount: 2
+    },
+    {
+      phase: "最终回答阶段",
+      answers: ["```skill\nname: writer\n```", "```read\nskill: writer\npath: guide.md\n```", mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: true,
+      expectedWaitCount: 3,
+      expectedSentMessageCount: 3
+    },
+    {
+      phase: "MCP-only 阶段",
+      answers: [mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: false,
+      expectedWaitCount: 1,
+      expectedSentMessageCount: 1
+    }
+  ])("ends the enhanced task silently when an MCP Tool call is denied during $phase", async ({
+    answers,
+    skillEnabled,
+    expectedWaitCount,
+    expectedSentMessageCount
+  }) => {
+    vi.useFakeTimers();
+    try {
+      const adapter = new FakeAdapter();
+      adapter.sessionId = "session-a";
+      adapter.answers = answers;
+      const callTool = vi.fn();
+      const commitSessionTrust = vi.fn();
+      const coordinator = new PageTaskCoordinator(
+        adapter,
+        vi.fn().mockResolvedValue(skillCatalog()),
+        vi.fn().mockResolvedValue([{ skillName: "writer", content: "Skill body", byteLength: 10 }]),
+        vi.fn().mockResolvedValue([{ skillName: "writer", path: "guide.md", content: "Guide body", byteLength: 10 }]),
+        document,
+        {
+          loadSettings: async () => ({ skillEnabled, reinjectionDelayMinSeconds: 0, reinjectionDelayMaxSeconds: 0 }),
+          mcp: {
+            loadCatalog: vi.fn().mockResolvedValue(mcpCatalog()),
+            loadDisclosures: vi.fn().mockResolvedValue([]),
+            loadDetailsBatch: vi.fn(),
+            commitDisclosures: vi.fn(),
+            hasSessionTrust: vi.fn().mockResolvedValue(false),
+            confirmToolCall: vi.fn().mockResolvedValue("deny"),
+            commitSessionTrust,
+            callTool
+          }
+        }
+      );
+
+      await coordinator.startQuestion("问题");
+
+      expect(callTool).not.toHaveBeenCalled();
+      expect(commitSessionTrust).not.toHaveBeenCalled();
+      expect(adapter.sentMessages).toHaveLength(expectedSentMessageCount);
+      expect(adapter.sentMessages.join("\n")).not.toContain("用户拒绝了这次 MCP Tool 调用。");
+      expect(adapter.waitCount).toBe(expectedWaitCount);
+      expect(vi.getTimerCount()).toBe(0);
+      expect(coordinator.currentState).toBe("completed");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("does not delay an MCP Tool result when a confirmation dialog was shown", async () => {
     vi.useFakeTimers();
     try {
@@ -880,7 +969,7 @@ describe("PageTaskCoordinator", () => {
       ].join("\n"), "最终回答"];
       const coordinator = new PageTaskCoordinator(
         adapter,
-        vi.fn().mockResolvedValue([]),
+        vi.fn().mockResolvedValue(skillCatalog()),
         vi.fn(),
         vi.fn(),
         document,
@@ -889,7 +978,7 @@ describe("PageTaskCoordinator", () => {
           loadSettings: async () => ({ skillEnabled: true, reinjectionDelayMinSeconds: 5, reinjectionDelayMaxSeconds: 5 }),
           progressiveKnowledge: { loadInitialState: async () => emptySessionToolKnowledgeState(), onFeedbackCommitted: vi.fn() },
           mcp: {
-            loadCatalog: vi.fn().mockResolvedValue([]),
+            loadCatalog: vi.fn().mockResolvedValue(mcpCatalog()),
             loadDisclosures: vi.fn().mockResolvedValue([]),
             loadDetailsBatch: vi.fn(),
             commitDisclosures: vi.fn(),
@@ -938,7 +1027,7 @@ describe("PageTaskCoordinator", () => {
       ].join("\n"), "最终回答"];
       const coordinator = new PageTaskCoordinator(
         adapter,
-        vi.fn().mockResolvedValue([]),
+        vi.fn().mockResolvedValue(skillCatalog()),
         vi.fn(),
         vi.fn(),
         document,
@@ -946,7 +1035,7 @@ describe("PageTaskCoordinator", () => {
           loadSettings: async () => ({ skillEnabled: true, reinjectionDelayMinSeconds: 3, reinjectionDelayMaxSeconds: 3 }),
           progressiveKnowledge: { loadInitialState: async () => emptySessionToolKnowledgeState(), onFeedbackCommitted: vi.fn() },
           mcp: {
-            loadCatalog: vi.fn().mockResolvedValue([]),
+            loadCatalog: vi.fn().mockResolvedValue(mcpCatalog()),
             loadDisclosures: vi.fn().mockResolvedValue([]),
             loadDetailsBatch: vi.fn(),
             commitDisclosures: vi.fn(),
@@ -977,7 +1066,7 @@ describe("PageTaskCoordinator", () => {
     adapter.answers = ["```skill\nname: writer\n```", "最终回答"];
     const coordinator = new PageTaskCoordinator(
       adapter,
-      vi.fn().mockResolvedValue([]),
+      vi.fn().mockResolvedValue(skillCatalog()),
       vi.fn().mockResolvedValue([{ skillName: "writer", content: "Skill body", byteLength: 10 }]),
       vi.fn(),
       document,
@@ -1015,6 +1104,7 @@ class FakeAdapter implements SiteTaskPort {
   sendAttempts = 0;
   answers: Array<string | Promise<string>> = ["最终回答"];
   onWait: (() => void) | null = null;
+  waitCount = 0;
   sessionId: string | null = null;
 
   readComposer(): string | null {
@@ -1059,6 +1149,7 @@ class FakeAdapter implements SiteTaskPort {
     previousAssistantCursor: object | null,
     signal?: AbortSignal
   ): Promise<string> {
+    this.waitCount += 1;
     this.onWait?.();
     this.waitedFromCursor = previousAssistantCursor;
     this.assistantCursor = {};
@@ -1097,4 +1188,37 @@ function mcpDetails(serverName: string) {
     detailSummary: `summary-${serverName}`,
     detailBytes: 100
   };
+}
+
+function skillCatalog(): SkillMetadata[] {
+  return [{
+    name: "writer",
+    description: "Write",
+    referenceCount: 1,
+    packageBytes: 100,
+    savedBytes: 80,
+    ignoredEntryCount: 0,
+    importedAt: "2026-08-07T00:00:00.000Z"
+  }];
+}
+
+function mcpCatalog(): McpServiceCatalogItem[] {
+  return [{
+    serviceId: "weather",
+    serverName: "weather",
+    displayName: "Weather Tools",
+    description: "天气查询",
+    toolCount: 1
+  }];
+}
+
+function mcpToolCallCommand(): string {
+  return [
+    "```mcp-call",
+    "server: weather",
+    "tool: current-weather",
+    "arguments:",
+    "  city: Shanghai",
+    "```"
+  ].join("\n");
 }

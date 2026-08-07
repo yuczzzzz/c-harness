@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, FileArchive, PlugZap, RefreshCw, Save, Searc
 import { type ChangeEvent, type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { McpServiceRecord } from "@/mcp/contracts";
+import { displayLocalEnvironmentMcpName, selectLocalEnvironmentMcp } from "@/mcp/local-environment";
 import {
   createMcpServiceClient,
   createGeneralSettingsClient,
@@ -206,10 +207,13 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
 
   const refresh = useCallback(async () => {
     try {
-      setSkills(await client.getCatalog());
+      const nextSkills = await client.getCatalog();
+      setSkills(nextSkills);
       setError("");
+      return nextSkills;
     } catch (loadError) {
       setError(messageFrom(loadError));
+      return null;
     }
   }, [client]);
 
@@ -265,10 +269,10 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
       }
     }
     setResults(nextResults);
-    await refresh();
+    await Promise.all([refresh(), refreshSettings()]);
     setBusy(false);
     if (fileInput.current) fileInput.current.value = "";
-  }, [busy, client, refresh, skills]);
+  }, [busy, client, refresh, refreshSettings, skills]);
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
     void importFiles(Array.from(event.target.files ?? []));
@@ -283,7 +287,7 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
     if (!window.confirm(`确定删除 Skill「${skill.name}」及其全部 Reference？`)) return;
     try {
       await client.delete(skill.name);
-      await refresh();
+      await Promise.all([refresh(), refreshSettings()]);
     } catch (deleteError) {
       setError(messageFrom(deleteError));
     }
@@ -307,6 +311,7 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
   };
 
   const savedBytes = skills.reduce((total, skill) => total + skill.savedBytes, 0);
+  const canToggleSkill = skills.length > 0;
   const filteredSkills = useMemo(() => {
     return skills.filter((skill) => matchesSkillQuery(skill, query));
   }, [query, skills]);
@@ -341,11 +346,11 @@ function SkillManagementPage({ client, settingsClient }: { client: SkillLibraryC
         <label className="toggle-control">
           <input
             type="checkbox"
-            checked={skillEnabled}
-            disabled={savingSkillEnabled}
+            checked={canToggleSkill && skillEnabled}
+            disabled={!canToggleSkill || savingSkillEnabled}
             onChange={(event) => void handleSkillEnabledChange(event.target.checked)}
           />
-          <span>{skillEnabled ? "已启用" : "已停用"}</span>
+          <span>{canToggleSkill && skillEnabled ? "已启用" : "已停用"}</span>
         </label>
       </section>
 
@@ -477,6 +482,7 @@ function McpManagementPage({ client }: { client: McpServiceClient }) {
   const [detectingServiceId, setDetectingServiceId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+  const localEnvironmentMcp = useMemo(() => selectLocalEnvironmentMcp(services), [services]);
 
   const refresh = useCallback(async () => {
     try {
@@ -573,6 +579,21 @@ function McpManagementPage({ client }: { client: McpServiceClient }) {
       </section>
 
       {error && <p className="global-error" role="alert">{error}</p>}
+
+      {localEnvironmentMcp.matches.length > 1 && localEnvironmentMcp.selected && (
+        <section className="mcp-local-warning" aria-labelledby="mcp-local-warning-title">
+          <h2 id="mcp-local-warning-title">本地环境 MCP 命中多个服务</h2>
+          <p>当前 Harness 将使用 {displayLocalEnvironmentMcpName(localEnvironmentMcp.selected)}（{localEnvironmentMcp.selected.serviceId}）。</p>
+          <ul>
+            {localEnvironmentMcp.matches.map((service) => (
+              <li key={service.serviceId}>
+                <strong>{displayLocalEnvironmentMcpName(service)}</strong>
+                <span>{service.serviceId}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="library-section" aria-labelledby="mcp-library-title">
         <h2 id="mcp-library-title">MCP 服务</h2>

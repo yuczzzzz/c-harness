@@ -99,6 +99,8 @@ export async function listMcpServices(): Promise<McpServiceRecord[]> {
 export async function listMcpServiceCatalog(): Promise<McpServiceCatalogItem[]> {
   return (await listMcpServices()).map((service) => ({
     serviceId: service.serviceId,
+    serverName: service.serverName,
+    serverTitle: service.serverTitle,
     displayName: service.serverTitle || service.serverName || service.serviceId,
     description: service.description,
     toolCount: service.toolCount

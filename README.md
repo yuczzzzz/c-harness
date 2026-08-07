@@ -52,6 +52,18 @@ c-harness 是一款 Chrome Manifest V3 扩展。它在受支持的网页版大�
 - MCP Tool 调用默认需要用户确认；用户可选择仅允许本次调用，或信任当前目标网站会话中的该服务。会话信任仅在服务详情未变化时免于重复确认。
 - MCP Tool 返回 `structuredContent` 时，扩展优先将其序列化为 YAML 回填；没有结构化结果时继续回填纯文本结果。
 
+### 本地开发环境 MCP
+
+- 本地文件读写、命令执行和项目构建等能力由用户自行启动并添加的本地开发环境 MCP 提供，实际权限和结果以该服务为准。
+- 受支持服务命中初始化信息中的 `serverName` 后，Harness 会在文件、本地、工作区、文件目录和本地 Skill 场景提示模型优先使用该服务；同时启用 Skill 时，模型会先确认 Skill 来源。
+- 多个服务命中当前支持列表时，Harness 按 `serverTitle` 选择首项；没有标题的服务排在后面，同标题再按 `serviceId` 排序。MCP 管理页会显示所有命中服务及当前选择，方便核对。
+
+当前支持的本地开发环境 MCP：
+
+- [CodexPro](https://github.com/rebel0789/codexpro)（`serverName` 为 `codexpro`，忽略大小写）
+
+希望支持其他本地开发环境 MCP？请通过 [GitHub Issue](https://github.com/yuczzzzz/c-harness/issues/new) 提供服务名称、初始化返回的 `serverName` 和文档链接，或直接提交 [Pull Request](https://github.com/yuczzzzz/c-harness/compare)。列表外的 MCP 仍可添加和调用，但不会获得本地开发环境协作提示。
+
 ## 支持范围与局限
 
 当前仅支持以下网站的 Chat 模式：
@@ -61,7 +73,7 @@ c-harness 是一款 Chrome Manifest V3 扩展。它在受支持的网页版大�
 
 c-harness 目前是一款面向 Google Chrome 桌面版 114 及以上版本的本地扩展，不是通用浏览器自动化工具。它不会从自然语言中猜测命令，只解析 Harness 约定的显式围栏命令。
 
-c-harness 只负责网页版大模型 Chat 模式与 Skill、MCP 之间的 Agent Loop，本身不提供本地文件读写、命令行执行或项目构建能力。若任务需要这些能力，应连接由用户自行启动的本地开发环境 MCP（如 CodexPro）；实际能力、访问范围和执行结果均由相应 MCP 提供。
+c-harness 只负责网页版大模型 Chat 模式与 Skill、MCP 之间的 Agent Loop，本身不提供本地文件读写、命令行执行或项目构建能力。若任务需要这些能力，应连接由用户自行启动的受支持本地开发环境 MCP（例如上方列表中的 CodexPro）；实际能力、访问范围和执行结果均由相应 MCP 提供。扩展根据初始化返回的 `serverName` 识别受支持服务，而不是根据地址或服务 ID 推断。
 
 同样由于浏览器扩展没有独立的 Python、Node.js 或 Shell 开发运行环境，部分 Skill 自带的 Python/JavaScript 辅助脚本暂不支持执行。当前更适合导入以 `SKILL.md` 和文本 Reference 为主的 Skill；如果某个 Skill 的使用流程依赖脚本生成、解析、联网查询或调用本地工具链，这些步骤需要用户在扩展外部完成后，再将结果作为对话上下文提供。
 
