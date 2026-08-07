@@ -4,12 +4,14 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  CH_EXTENSION_ID=<extension-id> pnpm acceptance:real -- --site deepseek --matrix full
+  CH_EXTENSION_ID=<extension-id> pnpm acceptance:real -- --site deepseek --matrix full --scenario baseline
 
 Options:
   --site deepseek|zai          Target chat site.
   --matrix no-harness|skill-only|mcp-only|full
                               Capability matrix to verify.
+  --scenario baseline|local-environment-guidance
+                              Acceptance scenario. Default: baseline.
   --extension-id <id>          Chrome extension id. Can also use CH_EXTENSION_ID.
   --question <text>            Optional question text. Defaults to a unique smoke prompt.
   --task-space <name>          Optional ego-browser task space name.
@@ -19,6 +21,7 @@ USAGE
 
 site=""
 matrix=""
+scenario="baseline"
 extension_id="${CH_EXTENSION_ID:-}"
 question=""
 task_space="c-harness real acceptance"
@@ -35,6 +38,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --matrix)
       matrix="${2:-}"
+      shift 2
+      ;;
+    --scenario)
+      scenario="${2:-}"
       shift 2
       ;;
     --extension-id)
@@ -81,30 +88,38 @@ case "$matrix" in
     ;;
 esac
 
+case "$scenario" in
+  baseline|local-environment-guidance) ;;
+  *)
+    echo "--scenario must be baseline or local-environment-guidance." >&2
+    exit 2
+    ;;
+esac
+
+if [[ "$scenario" == "local-environment-guidance" && "$matrix" != "mcp-only" && "$matrix" != "full" ]]; then
+  echo "local-environment-guidance requires the mcp-only or full matrix." >&2
+  exit 2
+fi
+
 if [[ -z "$extension_id" ]]; then
   echo "Missing extension id. Set CH_EXTENSION_ID or pass --extension-id." >&2
   exit 2
 fi
 
 if [[ -z "$question" ]]; then
-  question="ACCEPT_${site}_${matrix}_$(date +%Y%m%d_%H%M%S) 只回复 OK"
+  question="ACCEPT_${site}_${matrix}_${scenario}_$(date +%Y%m%d_%H%M%S) 只回复 OK"
 fi
 
-export C_HARNESS_ACCEPTANCE_SITE="$site"
-export C_HARNESS_ACCEPTANCE_MATRIX="$matrix"
-export C_HARNESS_ACCEPTANCE_EXTENSION_ID="$extension_id"
-export C_HARNESS_ACCEPTANCE_QUESTION="$question"
-export C_HARNESS_ACCEPTANCE_TASK_SPACE="$task_space"
-export C_HARNESS_ACCEPTANCE_TIMEOUT_SECONDS="$timeout_seconds"
+acceptance_config_json="$(node -e '
+const [site, matrix, scenario, extensionId, question, taskSpaceName, timeoutSeconds] = process.argv.slice(1)
+process.stdout.write(JSON.stringify({ site, matrix, scenario, extensionId, question, taskSpaceName, timeoutSeconds: Number(timeoutSeconds) }))
+' "$site" "$matrix" "$scenario" "$extension_id" "$question" "$task_space" "$timeout_seconds")"
 
 # Step 1：运行真实页面验收。脚本内部会备份并恢复扩展 IndexedDB。
-ego-browser nodejs <<'EOF'
-const site = process.env.C_HARNESS_ACCEPTANCE_SITE
-const matrix = process.env.C_HARNESS_ACCEPTANCE_MATRIX
-const extensionId = process.env.C_HARNESS_ACCEPTANCE_EXTENSION_ID
-const question = process.env.C_HARNESS_ACCEPTANCE_QUESTION
-const taskSpaceName = process.env.C_HARNESS_ACCEPTANCE_TASK_SPACE
-const timeoutSeconds = Number(process.env.C_HARNESS_ACCEPTANCE_TIMEOUT_SECONDS || '45')
+{
+  printf 'const acceptanceConfig = %s\n' "$acceptance_config_json"
+  cat <<'EOF'
+const { site, matrix, scenario, extensionId, question, taskSpaceName, timeoutSeconds } = acceptanceConfig
 
 const sites = {
   deepseek: {
@@ -123,7 +138,7 @@ const sites = {
   }
 }
 
-const expected = {
+const expectedByMatrix = {
   'no-harness': {
     skillEnabled: false,
     mcpEnabled: false,
@@ -156,7 +171,21 @@ const expected = {
     includes: ['我们按下面的约定完成这次问题：', '当前 Skill 目录：', '当前 MCP 服务目录：', question],
     excludes: []
   }
-}[matrix]
+}
+
+const scenarioIncludes = scenario === 'local-environment-guidance'
+  ? [
+      '多行字符串必须使用 YAML 块标量 `|`',
+      '禁止在单引号或双引号字符串中直接换行',
+      'arguments:\n  command: |\n    first command\n    second command',
+      '需要通过 bash 执行命令时，必须优先使用本地开发环境已安装的程序解决问题',
+      '只有已安装的程序无法解决时，才向我确认是否安装其他程序；得到确认前不得安装'
+    ]
+  : []
+const expected = {
+  ...expectedByMatrix[matrix],
+  includes: [...expectedByMatrix[matrix].includes, ...scenarioIncludes]
+}
 
 function stringify(value) {
   return typeof value === 'string' ? value : JSON.stringify(value, null, 2)
@@ -278,6 +307,32 @@ function indexedDbHelpersSource(actionSource) {
       database.close()
     }
 
+    async function markFirstMcpAsLocalEnvironment() {
+      const database = await openDatabase('c-harness-mcp')
+      const service = await new Promise((resolve, reject) => {
+        const transaction = database.transaction('services', 'readonly')
+        const request = transaction.objectStore('services').getAll()
+        request.onsuccess = () => resolve(request.result[0] || null)
+        request.onerror = () => reject(request.error)
+      })
+      if (!service) {
+        database.close()
+        throw new Error('local-environment-guidance requires at least one MCP service.')
+      }
+      await new Promise((resolve, reject) => {
+        const transaction = database.transaction('services', 'readwrite')
+        transaction.objectStore('services').put({
+          ...service,
+          serverName: 'codexpro',
+          serverTitle: 'Acceptance Local Environment'
+        })
+        transaction.oncomplete = resolve
+        transaction.onerror = () => reject(transaction.error)
+      })
+      database.close()
+      return service.serviceId
+    }
+
     ${actionSource}
   })()`
 }
@@ -356,6 +411,7 @@ try {
   await runOnExtensionPage(indexedDbHelpersSource(`
     await setSkillEnabled(${expected.skillEnabled ? 'true' : 'false'})
     ${expected.mcpEnabled ? '' : 'await clearMcpServices()'}
+    ${scenario === 'local-environment-guidance' ? 'await markFirstMcpAsLocalEnvironment()' : ''}
     return {
       skillEnabled: ${expected.skillEnabled ? 'true' : 'false'},
       mcpEnabled: ${expected.mcpEnabled ? 'true' : 'false'},
@@ -391,7 +447,7 @@ try {
   }
 
   const markdown = [
-    `- ${new Date().toISOString().slice(0, 10)}，${config.label} ${matrix} SOP 验收通过：任务空间 \`${taskSpaceName}\`，URL 形态 \`${observed.url}\`，输入框 \`${config.composerSelector}\`，发送控件 \`${config.sendSelector}\`；实际写入文本长度 \`${finalText.length}\`，问题标记 \`${question}\`。`,
+    `- ${new Date().toISOString().slice(0, 10)}，${config.label} ${matrix}/${scenario} SOP 验收通过：任务空间 \`${taskSpaceName}\`，URL 形态 \`${observed.url}\`，输入框 \`${config.composerSelector}\`，发送控件 \`${config.sendSelector}\`；实际写入文本长度 \`${finalText.length}\`，问题标记 \`${question}\`。`,
     `  - 文本摘要：${summarizeText(finalText)}`
   ].join('\n')
   cliLog(markdown)
@@ -406,10 +462,14 @@ try {
   }
 }
 EOF
+} | ego-browser nodejs
 
 # Step 2：验收脚本完成后关闭任务空间，避免遗留浏览器上下文。
-ego-browser nodejs <<'EOF'
-const taskSpaceName = process.env.C_HARNESS_ACCEPTANCE_TASK_SPACE
+{
+  printf 'const acceptanceConfig = %s\n' "$acceptance_config_json"
+  cat <<'EOF'
+const { taskSpaceName } = acceptanceConfig
 await completeTaskSpace(taskSpaceName, { keep: false })
 cliLog(`closed task space: ${taskSpaceName}`)
 EOF
+} | ego-browser nodejs
