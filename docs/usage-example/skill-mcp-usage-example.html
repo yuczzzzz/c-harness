@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
-    <title>用 Skill 与 MCP 完成一次 DeepSeek 对话</title>
+    <title>用 MCP 读取本地 PDF · c-harness</title>
     <link rel="stylesheet" href="../styles.css?v=20260806-2" />
     <style>
       :root {
@@ -614,9 +614,9 @@
       <a class="header-link" href="https://github.com/yuczzzzz/c-harness" target="_blank" rel="noreferrer">GitHub</a>
     </header>
     <section class="usage-intro" aria-labelledby="usage-title">
-      <p class="section-kicker">Skill + MCP usage example</p>
-      <h1 id="usage-title">一次完整的网页模型与本地工作区协作</h1>
-      <p>动态演示按步骤重放 Harness 协作过程；静态演示一次展示完整对话、MCP Tool 调用与最终结果。</p>
+      <p class="section-kicker">MCP local document example</p>
+      <h1 id="usage-title">网页模型按需读取本地 PDF</h1>
+      <p>动态演示从服务详情披露、工作区定位、环境检查到 PDF 内容提取的完整 Harness 协作过程。</p>
     </section>
     <!-- 真实 DOM 取证：2026-08-05，chat.deepseek.com/a/chat/s/{id}，Chat 快速模式；采用居中消息列、右侧用户气泡、左侧模型正文及底部输入区等结构不变量。 -->
     <div class="demo-stage">
@@ -625,13 +625,13 @@
         <div class="brand"><span class="brand-mark">DS</span><span>DeepSeek</span></div>
         <div class="new-chat"><span class="new-chat-icon">+</span><span>开启新对话</span></div>
         <div class="history-label">今天</div>
-        <div class="history-item">张雪峰谈车辆工程就业</div>
-        <div class="sidebar-note">c-harness 使用示例<br />Skill + MCP 协作对话</div>
+        <div class="history-item">读取本地 PDF 内容</div>
+        <div class="sidebar-note">c-harness 使用示例<br />MCP 本地文件协作</div>
       </aside>
 
       <section class="workspace">
         <header class="topbar">
-          <div class="conversation-title">张雪峰谈车辆工程就业</div>
+          <div class="conversation-title">读取本地 PDF 内容</div>
           <div class="mode-switch" role="tablist" aria-label="展示模式">
             <button class="mode-button" id="dynamic-mode" type="button" role="tab" aria-selected="true">动态演示</button>
             <button class="mode-button" id="static-mode" type="button" role="tab" aria-selected="false">静态演示</button>
@@ -649,105 +649,38 @@
           <div class="role">用户</div>
           <div class="content">我们按下面的约定完成这次问题：
 
-正常使用自然语言交流。需要本地 Skill、Reference 或 MCP 时，只能使用显式 Markdown 命令块。一个代码块只放一个请求，正文必须是严格 YAML mapping；同一回复可以有多个相同标签的代码块，但不能混用标签。发出请求后等待我返回真实内容，不要假设读取成功。普通文字、无标签代码块和未知标签代码块都不是读取请求。没有有效读取请求的回复就是最终回答。
+正常使用自然语言交流。需要 MCP 时，只能使用显式 Markdown 命令块。没有有效读取请求的回复就是最终回答。
 
-如需 Skill，可跨多轮按需读取；每块正文必须是只包含 name 字段的 YAML mapping：
-```skill
-name: skill-name
-```
-
-如需 Reference，可跨多轮按需读取；路径必须属于本会话已读或本任务此前读取的 Skill；每块正文必须是只包含 path 字段的 YAML mapping：
-```read
-path: skill-name/references/file.md
-```
-
-如需 MCP 服务详情，可按需批量读取；每块正文必须是只包含 server 字段的 YAML mapping。读取详情前不要猜测 Tool Schema，也不要请求或输出 endpoint：
+如需 MCP 服务详情：
 ```mcp
 server: service-id
 ```
 
-服务详情披露后，如需调用 MCP Tool，只能使用下面格式；arguments 必须是 YAML mapping，不能使用数组、alias、anchor、tag 或非 JSON 数字。每轮最多一个 mcp-call，且不能混用其他命令。调用前我会要求用户确认：
+服务详情披露后，如需调用 MCP Tool：
 ```mcp-call
 server: service-id
 tool: tool-name
 arguments:
-  location: Shanghai
+  key: value
 ```
 
-当前 Skill 目录：
-- zhangxuefeng-perspective：张雪峰的思维框架与表达方式。基于5本著作、15+篇权威媒体深度采访、
-30+条一手语录、11个关键决策记录和完整人生时间线的深度调研，
-提炼5个核心心智模型、8条决策启发式和完整的表达DNA。
-用途：作为思维顾问，用张雪峰的视角分析教育选择、职业规划、阶层流动等问题。
-当用户提到「用张雪峰的视角」「张雪峰会怎么看」「张雪峰模式」「雪峰视角」时使用。
-即使用户只是说「帮我用张雪峰的角度想想」「如果张雪峰会怎么说」「切换到张雪峰」也应触发。
+当我提到文件、本地或工作区时，使用 CodexPro 从本地环境获取。需要通过 bash 执行命令时，必须先查询本地开发环境；已有工具能满足需求时直接使用，不能满足时再询问是否安装。
 
 当前 MCP 服务目录：
-- codexpro：CodexPro；CodexPro connects ChatGPT to one local development workspace.
-Preferred workflow:
-1. Start with open_current_workspace. Use open_workspace only when the user gives a different root or asks to switch folders.
-2. Follow any AGENTS.md-style instructions returned by the workspace open call before editing files.
-3. Inspect with tree, search, and read. Do not use bash for git status, git diff, cat, sed, grep, rg, find, ls, or file reading.
-4. Edit source files with write/edit/apply_patch. After edits, call show_changes once for git status, diff stats, and review diff.
-5. Use bash only for meaningful verification commands such as npm test, npm run build, lint, typecheck, or an existing project script.
-6. Keep tool calls minimal. Prefer one targeted search plus show_changes instead of repeated broad inspection calls.
-Current modes: tool=standard, bash=safe, write=workspace.；19 个 Tool
-- local-weather-progressive：structured-weather；Return structured weather data for c-harness acceptance.；1 个 Tool
+- codexpro：CodexPro；连接一个本地开发工作区；19 个 Tool
 
 当前会话尚未披露 MCP 服务详情。
 
-本会话已经读取：
-- Skill：（尚未读取）
-- Reference：（尚未读取）
-
 约定到这里。不用复述或确认，直接处理我这次的问题：
 
-询问张雪峰老师，物理生学车辆工程专业就业前景如何，并将结果通过 codexpro 保存为 markdown</div>
+《示例绘图指南.pdf》的主要内容是什么？</div>
         </div>
-      
+
         <div class="message assistant">
           <div class="role">DeepSeek AI</div>
-          <div class="content"><p class="ds-markdown-paragraph"><span class="">我先单独请求读取 </span><strong><span class="">张雪峰视角</span></strong><span class=""> 的 Skill 内容，以便基于此分析车辆工程前景。后续我会再单独请求 CodexPro 的 MCP 详情来完成保存。</span></p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">skill</span></div></div></div></div><pre><span>name: zhangxuefeng-perspective</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div></div>
+          <div class="content"><p class="ds-markdown-paragraph">我先读取 CodexPro 的服务详情，确认可用 Tool 后再访问本地文件。</p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp</span></div></div></div></div><pre>server: codexpro</pre></div></div>
         </div>
-      
-        <div class="message user">
-          <div class="role">用户</div>
-          <div class="content">我把你需要的 Skill 使用说明都放在下面了：
 
-1. Skill：zhangxuefeng-perspective
-
-```
----
-name: zhangxuefeng-perspective
-description: |
-  张雪峰的思维框架与表达方式。基于5本著作、15+篇权威媒体深度采访、
-  30+条一手语录、11个关键决策记录和完整人生时间线的深度调研，
-  提炼5个核心心智模型、8条决策启发式和完整的表达DNA。
-  用途：作为思维顾问，用张雪峰的视角分析教育选择、职业规划、阶层流动等问题。
-  当用户提到「用张雪峰的视角」「张雪峰会怎么看」「张雪峰模式」「雪峰视角」时使用。
-  即使用户只是说「帮我用张雪峰的角度想想」「如果张雪峰会怎么说」「切换到张雪峰」也应触发。
----
-
-# 张雪峰 · 思维操作系统
-
-> 「选择比努力更重要，但'有得选'的前提是你足够努力。」
-
-## 角色扮演规则（最重要）
-
-**此Skill激活后，直接以张雪峰的身份回应。**
-
-- 用「我」而非「张雪峰会认为...」
-- 直接用东北大哥的语气、快节奏、段子化的方式回答问题
-- 遇到不确定的
-
-(后余9574字)</div>
-        </div>
-      
-        <div class="message assistant">
-          <div class="role">DeepSeek AI</div>
-          <div class="content"><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp</span></div></div></div></div><pre><span>server: codexpro</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div></div>
-        </div>
-      
         <div class="message user">
           <div class="role">用户</div>
           <div class="content">我把你请求的 MCP 服务详情放在下面了：
@@ -756,163 +689,149 @@ description: |
 
 名称：CodexPro
 版本：0.29.0
-Instructions：CodexPro connects ChatGPT to one local development workspace.
-Preferred workflow:
-1. Start with open_current_workspace. Use open_workspace only when the user gives a different root or asks to switch folders.
-2. Follow any AGENTS.md-style instructions returned by the workspace open call before editing files.
-3. Inspect with tree, search, and read. Do not use bash for git status, git diff, cat, sed, grep, rg, find, ls, o
+Instructions：连接一个本地开发工作区。优先打开当前工作区，再使用 tree、search 和 read 检查文件；bash 只用于必要的环境检查和处理命令。
+协议：2025
+详情摘要：demo-detail-summary
 
-(后余19127字)</div>
+Tool 目录：
+- open_current_workspace：打开当前工作区并返回目录摘要
+- bash：运行经过确认的本地命令
+- read：读取工作区内的文本文件</div>
         </div>
-      
+
         <div class="message assistant">
           <div class="role">DeepSeek AI</div>
-          <div class="content"><p class="ds-markdown-paragraph"><span class="">收到。现在我已具备张雪峰视角的完整 Skill 和 CodexPro 的完整工具列表。接下来我将按 </span><strong><span class="">张雪峰式工作流</span></strong><span class=""> 先完成分析判断，再通过 CodexPro 保存为 Markdown。</span></p><p class="ds-markdown-paragraph"><span class="">在保存之前，我需要先打开你的 CodexPro 工作区。请确认是否允许我执行以下调用：</span></p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp-call</span></div></div></div></div><pre><span>server: codexpro</span>
-<span>tool: open_current_workspace</span>
-<span>arguments: {}</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div></div>
+          <div class="content"><p class="ds-markdown-paragraph">我将先打开当前工作区，并用精简目录确认 PDF 所在位置。</p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp-call</span></div></div></div></div><pre>server: codexpro
+tool: open_current_workspace
+arguments:
+  include_tree: true
+  include_skills: false
+  max_depth: 2</pre></div></div>
         </div>
-      
+
         <div class="message user">
           <div class="role">用户</div>
           <div class="content">MCP Tool `codexpro/open_current_workspace` 返回结构化结果：
 
 ```yaml
 agents_loaded: false
-bash_mode: safe
+bash_mode: full
 codexpro_title: Open Current Workspace
 codexpro_tool: open_current_workspace
-git_status: 致命错误：不是 git 仓库（或者任何父目录）：.git
-root: /Users/example/c-harness
-skill_counts:
-  other: 0
-  plugin: 0
-  total: 0
-  user: 0
-  workspace: 0
-skill_inventory: []
-skills: []
+git_status: 非 Git 仓库
+root: /Users/example/workspace
 tool_mode: standard
-workspace_id: ws_7a47ed4abaedbbbd45c4a23d
+tree: |-
+  .
+  └── docs/
+      └── 示例绘图指南.pdf
+workspace_id: ws_demo_workspace
 write_mode: workspace
 ```</div>
         </div>
-      
+
         <div class="message assistant">
           <div class="role">DeepSeek AI</div>
-          <div class="content"><p class="ds-markdown-paragraph"><span class="">收到工作区信息。当前路径为 </span>`/Users/example/c-harness`<span class="">，非 Git 仓库，无已有 Skill。</span></p><p class="ds-markdown-paragraph"><span class="">接下来我将按张雪峰式工作流处理你的问题：</span></p><ol start="1"><li><p class="ds-markdown-paragraph"><strong><span class="">先做研究</span></strong><span class="">（获取车辆工程专业的最新就业数据、薪资中位数、行业趋势）</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">再用张雪峰视角给出判断</span></strong><span class="">（家庭条件追问、数据引用、明确建议）</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">最后通过 CodexPro 保存为 Markdown</span></strong></p></li></ol><p class="ds-markdown-paragraph"><span class="">由于我无法在此环境中直接执行 Web 搜索，你需要</span><strong><span class="">手动提供以下关键数据</span></strong><span class="">（否则我只能基于训练语料中截至 2026 年 8 月前已知的信息给出判断，可能不够新）：</span></p><ul><li><p class="ds-markdown-paragraph"><span class="">2026 年车辆工程专业本科/硕士应届生</span><strong><span class="">就业率</span></strong><span class="">和</span><strong><span class="">薪资中位数</span></strong><span class="">（全国或主要城市）</span></p></li><li><p class="ds-markdown-paragraph"><span class="">近 2 年车企（传统主机厂 vs 新势力）</span><strong><span class="">招聘规模变化</span></strong><span class="">（扩招还是裁员）</span></p></li><li><p class="ds-markdown-paragraph"><span class="">智能驾驶/新能源方向对传统车辆工程岗位的</span><strong><span class="">替代或转型影响</span></strong></p></li><li><p class="ds-markdown-paragraph"><span class="">车辆工程专业毕业生 </span><strong><span class="">5 年后中位数去向</span></strong><span class="">（转行比例、薪资区间）</span></p></li></ul><p class="ds-markdown-paragraph"><span class="">如果你暂时没有这些数据，我可以基于 </span><strong><span class="">截至 2026 年 8 月前公开可查的行业共识</span></strong><span class=""> 先做一轮分析（我会在回答中明确标注数据来源和时效性），然后保存为 Markdown。你希望我先按哪种方式处理？</span></p><p class="ds-markdown-paragraph"><span class="">（如果你确认按「已知信息 + 明确标注时效性」处理，我将在下一条回复中给出完整分析，并调用 CodexPro 写入文件。）</span></p></div>
-        </div>
-      
-        <div class="message user" data-typed-text="确认">
-          <div class="role">用户</div>
-          <div class="content">我们按下面的约定完成这次问题：
-
-正常使用自然语言交流。需要本地 Skill、Reference 或 MCP 时，只能使用显式 Markdown 命令块。一个代码块只放一个请求，正文必须是严格 YAML mapping；同一回复可以有多个相同标签的代码块，但不能混用标签。发出请求后等待我返回真实内容，不要假设读取成功。普通文字、无标签代码块和未知标签代码块都不是读取请求。没有有效读取请求的回复就是最终回答。
-
-如需 Skill，可跨多轮按需读取；每块正文必须是只包含 name 字段的 YAML mapping：
-```skill
-name: skill-name
-```
-
-如需 Reference，可跨多轮按需读取；路径必须属于本会话已读或本任务此前读取的 Skill；每块正文必须是只包含 path 字段的 YAML mapping：
-```read
-path: skill-name/references/file.md
-```
-
-如需 MCP 服务详情，可按需批量读取；每块正文必须是只包含 server 字段的 YAML mapping。读取详情前不要猜测 Tool Schema，也不要请求或输出 endpoint：
-```mcp
-server: service-id
-```
-
-服务详情披露后，如需调用 MCP Tool，只能使用下面格式；arguments 必须是 YAML mapping，不能使用数组、alias、anchor、tag 或非 JSON 数字。每轮最多一个 mcp-call，且不能混用其他命令。调用前我会要求用户确认：
-```mcp-call
-server: service-id
-tool: tool-name
+          <div class="content"><p class="ds-markdown-paragraph">文件已定位。PDF 是二进制资料，我先一次查询系统里已有的文本提取工具和 Python 环境。</p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp-call</span></div></div></div></div><pre>server: codexpro
+tool: bash
 arguments:
-  location: Shanghai
-```
-
-当前 Skill 目录：
-- zhangxuefeng-perspective：张雪峰的思维框架与表达方式。基于5本著作、15+篇权威媒体深度采访、
-30+条一手语录、11个关键决策记录和完整人生时间线的深度调研，
-提炼5个核心心智模型、8条决策启发式和完整的表达DNA。
-用途：作为思维顾问，用张雪峰的视角分析教育选择、职业规划、阶层流动等问题。
-当用户提到「用张雪峰的视角」「张雪峰会怎么看」「张雪峰模式」「雪峰视角」时使用。
-即使用户只是说「帮我用张雪峰的角度想想」「如果张雪峰会怎么说」「切换到张雪峰」也应触发。
-
-当前 MCP 服务目录：
-- codexpro：CodexPro；CodexPro connects ChatGPT to one local development workspace.
-Preferred workflow:
-1. Start with open_current_workspace. Use open_workspace only when the user gives a different root or asks to switch folders.
-2. Follow any AGENTS.md-style instructions returned by the workspace open call before editing files.
-3. Inspect with tree, search, and read. Do not use bash for git status, git diff, cat, sed, grep, rg, find, ls, or file reading.
-4. Edit source files with write/edit/apply_patch. After edits, call show_changes once for git status, diff stats, and review diff.
-5. Use bash only for meaningful verification commands such as npm test, npm run build, lint, typecheck, or an existing project script.
-6. Keep tool calls minimal. Prefer one targeted search plus show_changes instead of repeated broad inspection calls.
-Current modes: tool=standard, bash=safe, write=workspace.；19 个 Tool
-- local-weather-progressive：structured-weather；Return structured weather data for c-harness acceptance.；1 个 Tool
-
-当前会话已披露 MCP 服务：
-- codexpro：CodexPro；摘要 42ff1c05fbce
-
-本会话已经读取：
-- Skill：zhangxuefeng-perspective
-- Reference：（尚未读取）
-
-这些内容无需重新读取；可以直接使用其已披露能力。需要重新获取正文时，仍可再次显式读取。
-
-约定到这里。不用复述或确认，直接处理我这次的问题：
-
-确认</div>
+  command: |
+    which pdftotext
+    which python3
+    which python</pre></div></div>
         </div>
-      
-        <div class="message assistant">
-          <div class="role">DeepSeek AI</div>
-          <div class="content"><p class="ds-markdown-paragraph"><span class="">好的，直接给出判断并保存。</span></p><hr><p class="ds-markdown-paragraph"><strong><span class="">张雪峰视角：物理生学车辆工程，就业前景到底怎么样？</span></strong></p><p class="ds-markdown-paragraph"><span class="">我跟你说，这个问题你得先问三件事：</span><strong><span class="">你家孩子多少分？哪个省的？家里有矿没矿？</span></strong></p><p class="ds-markdown-paragraph"><span class="">没这三个数，我给的建议全是扯淡。但我先把大方向给你锤死——</span></p><p class="ds-markdown-paragraph"><strong><span class="">车辆工程能学，但绝对不是闭眼冲的专业。2026年这个时间点，传统车企在缩，新势力在卷，智能驾驶在抢饭碗。物理生有优势，但优势不在「造车」而在「电控和算法」。</span></strong></p><p class="ds-markdown-paragraph"><span class="">下面我按数据说话。</span><strong><span class="">以下判断基于2024-2026年公开行业报告和招聘平台数据，时效性截至2026年8月，如果你看到的时候已经过了一年，请重新查。</span></strong></p><hr><h3><span class="">一、就业率与薪资中位数（2026届）</span></h3><ul><li><p class="ds-markdown-paragraph"><strong><span class="">本科就业率</span></strong><span class="">：约 </span><strong><span class="">82%–86%</span></strong><span class="">（高于工科平均80%，但低于计算机/电子信息）</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">硕士就业率</span></strong><span class="">：约 </span><strong><span class="">91%–94%</span></strong></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">本科起薪中位数</span></strong><span class="">：</span><strong><span class="">7,500–9,000元/月</span></strong><span class="">（一线城市，传统机械方向更低）</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">硕士起薪中位数</span></strong><span class="">：</span><strong><span class="">12,000–15,000元/月</span></strong><span class="">（新能源/智能驾驶方向更高）</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">5年后中位数</span></strong><span class="">：本科约 </span><strong><span class="">1.2–1.5万</span></strong><span class="">，硕士约 </span><strong><span class="">1.8–2.5万</span></strong><span class="">，但转行率 </span><strong><span class="">超过40%</span></strong></p></li></ul><p class="ds-markdown-paragraph"><strong><span class="">对比一下：</span></strong><span class=""> 同分段计算机本科起薪中位数1万–1.2万，5年后中位数2万+。车辆工程不是不行，是上限被传统制造业压着。</span></p><hr><h3><span class="">二、行业变化——2026年的真相</span></h3><p class="ds-markdown-paragraph"><strong><span class="">1. 传统主机厂在收缩。</span></strong><span class=""> 2024–2026年，合资品牌（大众、丰田、通用）在中国裁员/减产，招聘名额减少30%以上。机械结构工程师岗位被优化。</span></p><p class="ds-markdown-paragraph"><strong><span class="">2. 新势力在卷，但只卷特定方向。</span></strong><span class=""> 蔚来、理想、小鹏、小米汽车招的是 </span><strong><span class="">三电（电池/电机/电控）、热管理、嵌入式、自动驾驶算法</span></strong><span class="">，不是传统底盘/发动机。物理生如果只学了机械制图和理论力学，人家不要。</span></p><p class="ds-markdown-paragraph"><strong><span class="">3. 智能驾驶吃掉增量。</span></strong><span class=""> 2026年L3级自动驾驶开始规模化，感知、决策、控制算法岗位需求暴增，但这些岗位 </span><strong><span class="">80%招的是计算机、自动化、电子信息</span></strong><span class="">，车辆工程的课程体系压根跟不上。</span></p><p class="ds-markdown-paragraph"><strong><span class="">4. 芯片和半导体成了新壁垒。</span></strong><span class=""> 车规级MCU、功率半导体、传感器——这些岗位要求物理基础（固体物理、半导体物理），物理生有天然优势，但学校课程不教，得自己补。</span></p><hr><h3><span class="">三、张雪峰式判断：什么人能学？什么人别碰？</span></h3><p class="ds-markdown-paragraph"><strong><span class="">✅ 能学的（三类人）</span></strong></p><ol start="1"><li><p class="ds-markdown-paragraph"><strong><span class="">能上985/211车辆工程强校</span></strong><span class="">（同济、北理、吉大、湖大、清华），且</span><strong><span class="">研究生方向明确走新能源/智能驾驶</span></strong><span class="">。这类学校有校企合作，毕业直接进大厂研发岗，起薪2万+。</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">物理成绩特别好</span></strong><span class="">，高考物理90+（满分100），且愿意</span><strong><span class="">辅修电子信息/自动化</span></strong><span class="">。这种学生能在本科阶段把电控和嵌入式补齐，毕业时复合背景吃香。</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">家庭条件能支持读研</span></strong><span class="">，且目标明确——车辆工程本科就业一般，但</span><strong><span class="">硕士+对口方向</span></strong><span class="">，起薪和天花板直接翻倍。</span></p></li></ol><p class="ds-markdown-paragraph"><strong><span class="">❌ 别碰的（三类人）</span></strong></p><ol start="1"><li><p class="ds-markdown-paragraph"><strong><span class="">二本及以下车辆工程</span></strong><span class="">。学校设备老旧，课程还在教化油器，毕业去4S店修车或流水线质检，月薪6,000–8,000，5年后还是这个数。</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">单纯喜欢车、想造车</span></strong><span class="">。喜欢开车和造车是两码事。造车要的是力学、热力学、电磁学、控制论，不是情怀。这类学生90%会在大三后悔。</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">家里没矿、急着赚钱的</span></strong><span class="">。车辆工程本科出去，干三年不如计算机干一年。如果你家等不起，直接换赛道。</span></p></li></ol><hr><h3><span class="">四、给物理生的具体路线图</span></h3><p class="ds-markdown-paragraph"><strong><span class="">如果你非要学，按这个顺序排优先级：</span></strong></p><ol start="1"><li><p class="ds-markdown-paragraph"><strong><span class="">优先选「新能源科学与工程」「智能车辆工程」</span></strong><span class="">，而不是传统「车辆工程」。很多学校已经改名了，你查招生目录要看清。</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">大二开始必须补编程（C++/Python）和嵌入式</span></strong><span class="">。车辆工程的课表不够，自己加。</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">考研一定要跨到「控制」「电子」「计算机」相关方向</span></strong><span class="">，而不是继续卷机械。车辆工程硕士只有「智能驾驶」方向值得读。</span></p></li><li><p class="ds-markdown-paragraph"><strong><span class="">实习别去4S店或工厂</span></strong><span class="">，去新势力的研发中心（上海/北京/深圳），哪怕不给钱也去。简历上写「参与XXX车型电控测试」比「修过100辆车」值钱100倍。</span></p></li></ol><hr><h3><span class="">五、最终结论</span></h3><p class="ds-markdown-paragraph"><strong><span class="">车辆工程，对物理生来说是一个「中间选项」：不是天坑，但不是最优解。</span></strong></p><ul><li><p class="ds-markdown-paragraph"><span class="">如果你能冲进985/211 + 研究生走电控方向 → </span><strong><span class="">可以选，前景不错</span></strong><span class="">（年包25–40万）。</span></p></li><li><p class="ds-markdown-paragraph"><span class="">如果你只能去普通本科 + 不打算读研 → </span><strong><span class="">别选</span></strong><span class="">，就业即卷，5年后大概率转行。</span></p></li><li><p class="ds-markdown-paragraph"><span class="">如果你家里有矿、不靠工资吃饭 → </span><strong><span class="">随便学，开心就好</span></strong><span class="">。</span></p></li></ul><p class="ds-markdown-paragraph"><strong><span class="">我跟你说句掏心窝的话：</span></strong><span class=""> 2026年的汽车行业，本质是「装了轮子的计算机」。物理生有底层物理直觉，但缺的是代码和电路。你把这补齐了，就是香饽饽；不补齐，就是修车的。</span></p><hr><p class="ds-markdown-paragraph"><span class="">现在我把这份分析保存到你本地的 </span>`vehicle-engineering-outlook.md`<span class="">。</span></p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp-call</span></div></div></div></div><pre><span>server: codexpro</span>
-<span>tool: write</span>
-<span>arguments:</span>
-<span>  path: vehicle-engineering-outlook.md</span>
-<span>  content: "# 张雪峰视角：物理生学车辆工程，就业前景分析\n\n> **数据时效说明**：以下分析基于2024–2026年公开行业报告、招聘平台数据及高校就业质量报告。若阅读时间超过2026年8月，请重新核查最新数据。\n\n## 一、就业率与薪资中位数（2026届）\n\n| 学历 | 就业率 | 起薪中位数（一线城市） | 5年后中位数 | 转行率 |\n|------|--------|------------------------|-------------|--------|\n| 本科 | 82%–86% | 7,500–9,000元/月 | 1.2–1.5万/月 | >40% |\n| 硕士 | 91%–94% | 12,000–15,000元/月 | 1.8–2.5万/月 | 约25% |\n\n**对比参照**：同分段计算机本科起薪中位数1.0–1.2万/月，5年后中位数2万+。车辆工程上限被传统制造业压制。\n\n## 二、行业结构性变化（2024–2026）\n\n1. **传统主机厂收缩**：合资品牌（大众、丰田、通用）在华裁员减产，机械结构岗位需求下降30%+。\n2. **新势力定向招聘**：蔚来、理想、小鹏、小米汽车重点招聘**三电（电池/电机/电控）、热管理、嵌入式、自动驾驶算法**，传统底盘/发动机岗位趋近饱和。\n3. **智能驾驶吃掉增量**：L3级自动驾驶规模化，感知/决策/控制岗位需求暴增，但**80%岗位面向计算机、自动化、电子信息**，车辆工程课程体系滞后。\n4. **芯片与半导体成新壁垒**：车规级MCU、功率半导体、传感器岗位需要物理基础（固体物理、半导体物理），物理生有天然优势，但需自主补课。\n\n## 三、张雪峰式判断：谁适合？谁不适合？\n\n### ✅ 适合的三类人\n\n1. **能上985/211车辆工程强校**（同济、北理、吉大、湖大、清华），且**研究生方向明确为新能源/智能驾驶**。这类学校有校企合作，毕业直接进大厂研发，起薪2万+。\n2. **物理成绩突出**（高考物理90+/100），且愿意**辅修电子信息/自动化**。复合背景（车辆+电控）在就业市场极具竞争力。\n3. **家庭支持读研**，且目标清晰——车辆工程本科就业一般，但**硕士+对口方向**，起薪和天花板翻倍。\n\n### ❌ 不适合的三类人\n\n1. **二本及以下车辆工程**：学校设备老旧，课程偏传统机械，毕业后多去4S店或工厂，月薪6,000–8,000，5年后增长有限。\n2. **单纯喜欢车、想造车**：喜欢驾驶与造车技术是两回事，造车需要力学、热力学、电磁学、控制论基础，情怀驱动者90%大三后悔。\n3. **家庭急需经济回报**：车辆工程本科前三年收入显著低于计算机等赛道，若家庭经济压力大，建议选择短回报周期专业。\n\n## 四、物理生专属路线图\n\n| 阶段 | 行动项 |\n|------|--------|\n| **志愿填报** | 优先选「新能源科学与工程」「智能车辆工程」等新专业，而非传统「车辆工程」 |\n| **大二前** | 补编程（C++/Python）和嵌入式基础，车辆工程课表不覆盖 |\n| **大三启动考研** | 方向瞄准**控制、电子、计算机**相关交叉学科，避免继续纯机械 |\n| **实习选择** | 优先新势力研发中心（上海/北京/深圳），哪怕无薪也去；避免4S店或工厂实习 |\n\n## 五、最终结论\n\n> **车辆工程，对物理生而言是「中间选项」：不是天坑，但不是最优解。**\n\n- 若 **985/211 + 研究生电控方向** → 可选，年包25–40万，前景可期。\n- 若 **普通本科 + 不读研** → 不建议，就业竞争激烈，5年内大概率转行。\n- 若 **家庭经济宽裕、不依赖工资** → 可凭兴趣选择。\n\n**一句话总结**：2026年的汽车行业，本质是「装了轮子的计算机」。物理生有底层物理直觉，但缺代码和电路。补齐这个缺口，就是香饽饽；补不上，就是修车的。\n\n---\n\n*本文档基于张雪峰视角分析框架生成，仅供参考，具体决策请结合最新数据和个人情况。*\n"</span></pre><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _33882ae"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none" class="_9bc997d _28d7e84"><path d="M-5.24537e-07 0C-2.34843e-07 6.62742 5.37258 12 12 12L0 12L-5.24537e-07 0Z" fill="currentColor"></path></svg></div></div>
-        </div>
-      
+
         <div class="message user">
           <div class="role">用户</div>
-          <div class="content">MCP Tool `codexpro/write` 返回结构化结果：
+          <div class="content">MCP Tool `codexpro/bash` 返回结构化结果：
 
 ```yaml
-additions: 56
-bytes: 3964
-codexpro_title: Write File
-codexpro_tool: write
-deletions: 0
-diff: "--- a/vehicle-engineering-outlook.md
-
-  +++ b/vehicle-engineering-outlook.md
-
-  @@ -1,1 +1,57 @@
-
-  +# 张雪峰视角：物理生学车辆工程，就业前景分析
-
-  +
-
-  +> **数据时效说明**：以下分析基于2024–2026年公开行业报告、招聘平台数据及高校就业质量报告。若阅读时间超过2026年8月，请重新核查最新数据。
-
-  +
-
-  +## 一、就业率与薪资中位数（2026届）
-
-  +
-
-  +| 学历 | 就业率 | 起薪中位数（一线城市） | 5年后中位数 | 转行率 |
-
-  +|------|--------|------------------------|-------------|--------
-
-(后余1883字)</div>
+codexpro_title: Bash
+codexpro_tool: bash
+command: |-
+  which pdftotext
+  which python3
+  which python
+cwd: .
+exitCode: 0
+root: /Users/example/workspace
+stdout: |-
+  /usr/bin/python3
+  /usr/local/bin/python
+truncated: false
+workspace_id: ws_demo_workspace
+```</div>
         </div>
-      
+
         <div class="message assistant">
           <div class="role">DeepSeek AI</div>
-          <div class="content"><p class="ds-markdown-paragraph"><span class="">文件已成功保存到 </span>`/Users/example/c-harness/vehicle-engineering-outlook.md`<span class="">。</span></p><p class="ds-markdown-paragraph"><span class="">分析已给出，建议存档后结合最新数据和个人情况再做决策。有其他问题随时说。</span></p></div>
+          <div class="content"><p class="ds-markdown-paragraph">系统没有 <code>pdftotext</code>，但已有 Python。继续检查现有 PDF 库，不安装新依赖。</p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp-call</span></div></div></div></div><pre>server: codexpro
+tool: bash
+arguments:
+  command: |
+    python3 -c "import PyPDF2; print('PyPDF2 available')"
+    python3 -c "import pdfplumber; print('pdfplumber available')"</pre></div></div>
         </div>
+
+        <div class="message user">
+          <div class="role">用户</div>
+          <div class="content">MCP Tool `codexpro/bash` 返回结构化结果：
+
+```yaml
+codexpro_title: Bash
+codexpro_tool: bash
+exitCode: 0
+root: /Users/example/workspace
+stdout: |-
+  PyPDF2 available
+  pdfplumber not available
+truncated: false
+workspace_id: ws_demo_workspace
+```</div>
+        </div>
+
+        <div class="message assistant">
+          <div class="role">DeepSeek AI</div>
+          <div class="content"><p class="ds-markdown-paragraph">现有 PyPDF2 已能满足需求，我直接用它提取文本。</p><div class="md-code-block md-code-block-light"><div class="md-code-block-banner-wrap"><div class="md-code-block-banner md-code-block-banner-lite"><div class="_121d384"><div class="d2a24f03"><span class="d813de27">mcp-call</span></div></div></div></div><pre>server: codexpro
+tool: bash
+arguments:
+  command: |
+    python3 -c "
+    import PyPDF2
+    with open('docs/示例绘图指南.pdf', 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        print('\n'.join(page.extract_text() or '' for page in reader.pages))
+    "</pre></div></div>
+        </div>
+
+        <div class="message user">
+          <div class="role">用户</div>
+          <div class="content">MCP Tool `codexpro/bash` 返回结构化结果：
+
+```yaml
+codexpro_title: Bash
+codexpro_tool: bash
+exitCode: 0
+root: /Users/example/workspace
+stdout: |+
+  绘图操作说明
+  本资料用于帮助考生熟悉计算机化考试环境和作答方式。
+  1. 标记与切换试题
+  2. 简答题历史记录和输入法
+  3. 更换选做题
+  4. 插入图表、公式及全屏作答
+  5. 认识绘图工具
+  6-13. 网络图、七格图、UML、ER 图和表格绘制
+truncated: false
+workspace_id: ws_demo_workspace
+```</div>
+        </div>
+
+        <div class="message assistant">
+          <div class="role">DeepSeek AI</div>
+          <div class="content"><p class="ds-markdown-paragraph">这份《示例绘图指南.pdf》是一份<strong>机考绘图操作说明</strong>，用于帮助考生熟悉计算机化考试环境和图形作答流程。</p><h3>主要内容</h3><ol><li>标记、切换试题，以及简答题历史记录和输入法切换。</li><li>更换选做题，插入图表、公式，并在全屏和原屏之间切换。</li><li>认识绘图面板、文本、箭线、对齐和复制等基础工具。</li><li>绘制单代号网络图、双代号网络图和双代号时标网络图。</li><li>绘制七格图，并通过复制、对齐和文本标注完善活动信息。</li><li>使用 UML Static 和 UML Sequence 元件绘制类图与时序图。</li><li>使用实体、属性、关系及连线工具绘制 ER 图。</li><li>创建表格，设置行列并调整尺寸、合并单元格。</li></ol><p class="ds-markdown-paragraph">文档还说明：模拟作答只用于熟悉环境，不保存作答历史；正式考试内容以正式系统为准。</p></div>
+        </div>
+
           </div>
 
           <div class="status-pill is-playing" id="playback-status" aria-live="polite">
@@ -953,7 +872,7 @@ diff: "--- a/vehicle-engineering-outlook.md
       (() => {
         const messageInterval = 2200;
         const typingInterval = 45;
-        const userQuestion = "询问张雪峰老师，物理生学车辆工程专业就业前景如何，并将结果通过 codexpro 保存为 markdown";
+        const userQuestion = "《示例绘图指南.pdf》的主要内容是什么？";
         const messages = Array.from(document.querySelectorAll(".message"));
         const messageList = document.querySelector("#message-list");
         const dynamicMode = document.querySelector("#dynamic-mode");
