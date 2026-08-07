@@ -81,6 +81,10 @@ interface TaskCapabilitySnapshot {
   mcpEnabled: boolean;
 }
 
+type McpToolCallResolution =
+  | { denied: true }
+  | { denied: false; nextCursor: object | null };
+
 /** 协调一个内存中的增强任务，并拦截当前页面上的用户发送操作。 */
 export class PageTaskCoordinator {
   private state: TaskState | null = null;
@@ -249,7 +253,9 @@ export class PageTaskCoordinator {
       }
       if (batch.kind === "mcp-call") {
         try {
-          cursor = await this.resolveMcpToolCall(runId, batch.request, signal);
+          const resolution = await this.resolveMcpToolCall(runId, batch.request, signal);
+          if (resolution.denied) return null;
+          cursor = resolution.nextCursor;
         } catch (error) {
           if (mcpCorrectionUsed) throw error;
           mcpCorrectionUsed = true;
@@ -299,7 +305,9 @@ export class PageTaskCoordinator {
       }
       if (batch.kind === "mcp-call") {
         try {
-          cursor = await this.resolveMcpToolCall(runId, batch.request, signal);
+          const resolution = await this.resolveMcpToolCall(runId, batch.request, signal);
+          if (resolution.denied) return;
+          cursor = resolution.nextCursor;
         } catch (error) {
           if (correctionUsed) throw error;
           correctionUsed = true;
@@ -348,7 +356,9 @@ export class PageTaskCoordinator {
       }
       if (batch.kind === "mcp-call") {
         try {
-          cursor = await this.resolveMcpToolCall(runId, batch.request, signal);
+          const resolution = await this.resolveMcpToolCall(runId, batch.request, signal);
+          if (resolution.denied) return null;
+          cursor = resolution.nextCursor;
         } catch (error) {
           if (mcpCorrectionUsed) throw error;
           mcpCorrectionUsed = true;
@@ -398,7 +408,9 @@ export class PageTaskCoordinator {
       }
       if (batch.kind === "mcp-call") {
         try {
-          cursor = await this.resolveMcpToolCall(runId, batch.request, signal);
+          const resolution = await this.resolveMcpToolCall(runId, batch.request, signal);
+          if (resolution.denied) return;
+          cursor = resolution.nextCursor;
         } catch (error) {
           if (mcpCorrectionUsed) throw error;
           mcpCorrectionUsed = true;
@@ -450,7 +462,9 @@ export class PageTaskCoordinator {
       }
       if (kind === "mcp-call") {
         try {
-          cursor = await this.resolveMcpToolCall(runId, batch.request, signal);
+          const resolution = await this.resolveMcpToolCall(runId, batch.request, signal);
+          if (resolution.denied) return;
+          cursor = resolution.nextCursor;
         } catch (error) {
           if (mcpCorrectionUsed) throw error;
           mcpCorrectionUsed = true;
@@ -507,7 +521,11 @@ export class PageTaskCoordinator {
     return nextCursor;
   }
 
-  private async resolveMcpToolCall(runId: number, request: McpToolCallRequest, signal: AbortSignal): Promise<object | null> {
+  private async resolveMcpToolCall(
+    runId: number,
+    request: McpToolCallRequest,
+    signal: AbortSignal
+  ): Promise<McpToolCallResolution> {
     if (!this.capabilitySnapshot?.mcpEnabled) throw new Error("当前任务未启用 MCP 能力。");
     if (!this.hooks.mcp) throw new Error("当前页面不能调用 MCP Tool。");
     if (!this.hooks.mcp.callTool) throw new Error("当前页面不能调用 MCP Tool。");
@@ -523,9 +541,10 @@ export class PageTaskCoordinator {
     });
     const outcome = await coordinator.callTool(request);
     this.assertCurrentRun(runId);
+    if (outcome.kind === "denied") return { denied: true };
     const nextCursor = this.adapter.captureAssistantCursor();
     await this.sendReinjection(formatMcpToolCallResult(outcome.result), signal, { skipDelay: outcome.prompted });
-    return nextCursor;
+    return { denied: false, nextCursor };
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {

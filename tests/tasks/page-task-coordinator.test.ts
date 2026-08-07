@@ -877,6 +877,83 @@ describe("PageTaskCoordinator", () => {
     expect(coordinator.currentState).toBe("completed");
   });
 
+  it.each([
+    {
+      phase: "Skill 阶段",
+      answers: [mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: true,
+      expectedWaitCount: 1,
+      expectedSentMessageCount: 1
+    },
+    {
+      phase: "Reference 阶段",
+      answers: ["```skill\nname: writer\n```", mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: true,
+      expectedWaitCount: 2,
+      expectedSentMessageCount: 2
+    },
+    {
+      phase: "最终回答阶段",
+      answers: ["```skill\nname: writer\n```", "```read\nskill: writer\npath: guide.md\n```", mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: true,
+      expectedWaitCount: 3,
+      expectedSentMessageCount: 3
+    },
+    {
+      phase: "MCP-only 阶段",
+      answers: [mcpToolCallCommand(), "不应继续等待"],
+      skillEnabled: false,
+      expectedWaitCount: 1,
+      expectedSentMessageCount: 1
+    }
+  ])("ends the enhanced task silently when an MCP Tool call is denied during $phase", async ({
+    answers,
+    skillEnabled,
+    expectedWaitCount,
+    expectedSentMessageCount
+  }) => {
+    vi.useFakeTimers();
+    try {
+      const adapter = new FakeAdapter();
+      adapter.sessionId = "session-a";
+      adapter.answers = answers;
+      const callTool = vi.fn();
+      const commitSessionTrust = vi.fn();
+      const coordinator = new PageTaskCoordinator(
+        adapter,
+        vi.fn().mockResolvedValue(skillCatalog()),
+        vi.fn().mockResolvedValue([{ skillName: "writer", content: "Skill body", byteLength: 10 }]),
+        vi.fn().mockResolvedValue([{ skillName: "writer", path: "guide.md", content: "Guide body", byteLength: 10 }]),
+        document,
+        {
+          loadSettings: async () => ({ skillEnabled, reinjectionDelayMinSeconds: 0, reinjectionDelayMaxSeconds: 0 }),
+          mcp: {
+            loadCatalog: vi.fn().mockResolvedValue(mcpCatalog()),
+            loadDisclosures: vi.fn().mockResolvedValue([]),
+            loadDetailsBatch: vi.fn(),
+            commitDisclosures: vi.fn(),
+            hasSessionTrust: vi.fn().mockResolvedValue(false),
+            confirmToolCall: vi.fn().mockResolvedValue("deny"),
+            commitSessionTrust,
+            callTool
+          }
+        }
+      );
+
+      await coordinator.startQuestion("问题");
+
+      expect(callTool).not.toHaveBeenCalled();
+      expect(commitSessionTrust).not.toHaveBeenCalled();
+      expect(adapter.sentMessages).toHaveLength(expectedSentMessageCount);
+      expect(adapter.sentMessages.join("\n")).not.toContain("用户拒绝了这次 MCP Tool 调用。");
+      expect(adapter.waitCount).toBe(expectedWaitCount);
+      expect(vi.getTimerCount()).toBe(0);
+      expect(coordinator.currentState).toBe("completed");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("does not delay an MCP Tool result when a confirmation dialog was shown", async () => {
     vi.useFakeTimers();
     try {
@@ -1027,6 +1104,7 @@ class FakeAdapter implements SiteTaskPort {
   sendAttempts = 0;
   answers: Array<string | Promise<string>> = ["最终回答"];
   onWait: (() => void) | null = null;
+  waitCount = 0;
   sessionId: string | null = null;
 
   readComposer(): string | null {
@@ -1071,6 +1149,7 @@ class FakeAdapter implements SiteTaskPort {
     previousAssistantCursor: object | null,
     signal?: AbortSignal
   ): Promise<string> {
+    this.waitCount += 1;
     this.onWait?.();
     this.waitedFromCursor = previousAssistantCursor;
     this.assistantCursor = {};
@@ -1131,4 +1210,15 @@ function mcpCatalog(): McpServiceCatalogItem[] {
     description: "天气查询",
     toolCount: 1
   }];
+}
+
+function mcpToolCallCommand(): string {
+  return [
+    "```mcp-call",
+    "server: weather",
+    "tool: current-weather",
+    "arguments:",
+    "  city: Shanghai",
+    "```"
+  ].join("\n");
 }
