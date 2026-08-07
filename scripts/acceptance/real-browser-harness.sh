@@ -178,8 +178,10 @@ const scenarioIncludes = scenario === 'local-environment-guidance'
       '多行字符串必须使用 YAML 块标量 `|`',
       '禁止在单引号或双引号字符串中直接换行',
       'arguments:\n  command: |\n    first command\n    second command',
-      '需要通过 bash 执行命令时，必须优先使用本地开发环境已安装的程序解决问题',
-      '只有已安装的程序无法解决时，才向我确认是否安装其他程序；得到确认前不得安装'
+      '需要通过 bash 执行命令时，必须先执行命令查询本地开发环境情况',
+      '一次尽可能查询多种工具',
+      '如果本地开发环境能够满足需求, 则直接执行对应命令',
+      '只有本地开发环境无法满足需求时，才向我确认是否安装其他程序；得到确认前不得安装'
     ]
   : []
 const expected = {
