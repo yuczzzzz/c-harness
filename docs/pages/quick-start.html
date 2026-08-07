@@ -76,10 +76,13 @@
           <p class="section-kicker">Local environment</p>
           <h2 id="environment-title">准备本地开发环境</h2>
           <p class="section-lead">
-            c-harness 本身不会直接访问本地文件或执行命令。这里以
+            c-harness 本身不会直接访问本地文件或执行命令。本指南以
             <a class="inline-link" href="https://github.com/rebel0789/codexpro" target="_blank" rel="noreferrer">CodexPro</a>
-            为例：它把你明确选择的工作区作为 MCP 服务开放给扩展。CodexPro 要求 Node.js 20 或更高版本。
+            作为本地开发环境 MCP 的示例：它把你明确选择的工作区作为 MCP 服务开放给扩展。CodexPro 要求 Node.js 20 或更高版本。
           </p>
+          <aside class="guide-note">
+            <strong>当前支持的本地开发环境 MCP：</strong> CodexPro（初始化返回的 <code>serverName</code> 为 <code>codexpro</code>，忽略大小写）。其他 MCP 服务仍可添加和调用，但不会获得本地开发环境协作提示。希望新增支持，请提交 <a class="inline-link" href="https://github.com/yuczzzzz/c-harness/issues/new" target="_blank" rel="noreferrer">GitHub Issue</a> 或 <a class="inline-link" href="https://github.com/yuczzzzz/c-harness/compare" target="_blank" rel="noreferrer">Pull Request</a>，并附上服务名称、<code>serverName</code> 和文档链接。
+          </aside>
 
           <div class="platform-grid">
             <article class="platform-panel">
@@ -100,7 +103,7 @@
 
             <article class="platform-panel">
               <div class="platform-heading"><span class="platform-dot windows-dot" aria-hidden="true"></span><h3>Windows</h3></div>
-              <p>先准备 Git Bash，再通过 nvm-windows 安装 Node.js。后续 CodexPro 命令全部在 Git Bash 中执行。</p>
+              <p>先准备 Git Bash，再通过 nvm-windows 安装 Node.js。本示例后续的 CodexPro 命令全部在 Git Bash 中执行。</p>
               <ol>
                 <li>
                   从 <a class="inline-link" href="https://gitforwindows.org/" target="_blank" rel="noreferrer">Git for Windows</a>
@@ -116,7 +119,7 @@
 <span>$</span> nvm use 20
 <span>$</span> node --version
 <span>$</span> npm --version</code></pre>
-              <aside class="guide-note">从这一步开始，请始终使用 Git Bash 启动和操作 CodexPro。</aside>
+              <aside class="guide-note">从这一步开始，请始终使用 Git Bash 启动和操作本示例中的 CodexPro。</aside>
             </article>
           </div>
         </div>
@@ -125,11 +128,11 @@
       <section class="section guide-section" aria-labelledby="codexpro-title">
         <div class="guide-index">03</div>
         <div class="guide-content">
-          <p class="section-kicker">CodexPro</p>
-          <h2 id="codexpro-title">初始化工作区并启动 MCP</h2>
+          <p class="section-kicker">Example: CodexPro</p>
+          <h2 id="codexpro-title">示例：初始化工作区并启动本地开发环境 MCP</h2>
           <ol class="instruction-list">
             <li>
-              <h3>安装 CodexPro</h3>
+            <h3>安装示例服务 CodexPro</h3>
               <pre class="terminal" aria-label="安装 CodexPro 命令"><code><span>$</span> npm install -g codexpro
 <span>$</span> codexpro --version</code></pre>
             </li>
@@ -161,7 +164,7 @@
           </ol>
           <aside class="security-note">
             <strong>只授权可信目录</strong>
-            <p>CodexPro 的 Tool 可以读取、修改文件并运行受限命令。请仅把你愿意开放的项目设为工作区，并在 c-harness 弹出调用确认时检查 Tool 与参数。</p>
+            <p>本地开发环境 MCP 的 Tool 可能读取、修改文件并运行受限命令。本示例中的 CodexPro 也属于这一类，请仅把你愿意开放的项目设为工作区，并在 c-harness 弹出调用确认时检查 Tool 与参数。</p>
           </aside>
         </div>
       </section>
@@ -170,26 +173,26 @@
         <div class="guide-index">04</div>
         <div class="guide-content">
           <p class="section-kicker">Connect MCP</p>
-          <h2 id="connect-title">把 CodexPro 添加到扩展</h2>
+          <h2 id="connect-title">把本地开发环境 MCP 添加到扩展</h2>
           <ol class="instruction-list">
             <li><h3>打开 MCP 管理</h3><p>进入 c-harness 的“扩展程序选项”，在左侧选择“MCP 管理”。</p></li>
             <li>
               <h3>添加服务地址</h3>
-              <p>在“添加 MCP 服务”中粘贴 <code>http://127.0.0.1:8787/mcp</code>，点击“添加”。该地址使用 <strong>Streamable HTTP</strong>，无需填写鉴权信息。</p>
+              <p>本示例在“添加 MCP 服务”中粘贴 <code>http://127.0.0.1:8787/mcp</code>，点击“添加”。该地址使用 <strong>Streamable HTTP</strong>，无需填写鉴权信息。</p>
             </li>
             <li>
               <h3>确认本地环境识别</h3>
-              <p>c-harness 会读取 MCP 初始化信息中的 <code>serverName</code>，以忽略大小写的精确匹配识别 CodexPro，而不是根据服务地址或服务 ID 推断。识别成功后，模型在文件、本地、工作区、文件目录和本地 Skill 场景会收到使用 CodexPro 的提示。</p>
-              <aside class="guide-note">若同时连接了多个被识别为 CodexPro 的服务，Harness 会优先选择 <code>serverTitle</code> 排序最靠前的一项；没有标题的服务排在后面，同标题再按 <code>serviceId</code> 排序。MCP 管理页会列出所有命中服务和当前选择。</aside>
+              <p>c-harness 会读取 MCP 初始化信息中的 <code>serverName</code>，以忽略大小写的精确匹配识别当前支持的本地开发环境 MCP，而不是根据服务地址或服务 ID 推断。本示例中的 CodexPro 使用 <code>codexpro</code>。识别成功后，模型在文件、本地、工作区、文件目录和本地 Skill 场景会收到使用该服务的提示。</p>
+              <aside class="guide-note">若同时连接了多个命中支持列表的服务，Harness 会优先选择 <code>serverTitle</code> 排序最靠前的一项；没有标题的服务排在后面，同标题再按 <code>serviceId</code> 排序。MCP 管理页会列出所有命中服务和当前选择。</aside>
             </li>
-            <li><h3>开始网页对话</h3><p>打开 DeepSeek 或 Z.ai 的 Chat 模式正常提问。模型需要本地能力时会先读取 CodexPro 详情，再请求调用具体 Tool；检查参数后选择仅本次允许、信任当前会话并允许或拒绝。若同时启用了 Skill，模型会先向你确认 Skill 来源，确认前不会发出 Harness 命令。</p></li>
+            <li><h3>开始网页对话</h3><p>打开 DeepSeek 或 Z.ai 的 Chat 模式正常提问。模型需要本地能力时会先读取本地开发环境 MCP 的详情，再请求调用具体 Tool；检查参数后选择仅本次允许、信任当前会话并允许或拒绝。若同时启用了 Skill，模型会先向你确认 Skill 来源，确认前不会发出 Harness 命令。</p></li>
           </ol>
 
           <div class="result-band">
             <div>
               <p class="section-kicker">Ready</p>
               <h2>网页对话已经接入本地工作区</h2>
-              <p>现在可以让模型检查项目、读取或修改文件，并运行 CodexPro 允许的验证命令。所有实际能力都来自 CodexPro，c-harness 负责协调请求、回注结果和调用确认；启用 Skill 时会先由你确认其来源。</p>
+              <p>现在可以让模型检查项目、读取或修改文件，并运行本地开发环境 MCP 允许的验证命令。所有实际能力都来自你添加的服务，c-harness 负责协调请求、回注结果和调用确认；启用 Skill 时会先由你确认其来源。</p>
             </div>
             <a class="button button-primary" href="../usage-example/skill-mcp-usage-example.html">查看使用例</a>
           </div>
