@@ -14,7 +14,8 @@
     "postinstall": "wxt prepare",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "acceptance:real": "bash scripts/acceptance/real-browser-harness.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "^2.0.0",
