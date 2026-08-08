@@ -89,6 +89,17 @@ c-harness 只负责网页版大模型 Chat 模式与 Skill、MCP 之间的 Agent
 
 环境要求：Node.js 22.18.0 及以上、23 以下版本，以及 pnpm 11.10.0。
 
+Node.js 已内置 Corepack。首次开发或遇到 `pnpm: command not found` 时，先启用 pnpm；Corepack 会根据 `package.json` 中的 `packageManager` 字段下载并使用仓库指定的 pnpm 版本：
+
+```bash
+corepack enable pnpm
+pnpm --version
+```
+
+版本输出应为 `11.10.0`。如果启用后当前 zsh 仍提示找不到命令，请先执行 `rehash`，再重新运行 `pnpm --version`。
+
+安装依赖并启动开发环境：
+
 ```bash
 pnpm install
 pnpm dev
