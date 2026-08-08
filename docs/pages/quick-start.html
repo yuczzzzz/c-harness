@@ -95,10 +95,10 @@
                 </li>
                 <li>安装并切换到 Node.js 20：</li>
               </ol>
-              <pre class="terminal" aria-label="macOS 安装 Node.js 命令"><code><span>$</span> nvm install 20
-<span>$</span> nvm use 20
-<span>$</span> node --version
-<span>$</span> npm --version</code></pre>
+              <pre class="terminal" aria-label="macOS 安装 Node.js 命令"><code>nvm install 20
+nvm use 20
+node --version
+npm --version</code></pre>
             </article>
 
             <article class="platform-panel">
@@ -115,10 +115,10 @@
                 </li>
                 <li>打开 Git Bash，安装并切换到 Node.js 20：</li>
               </ol>
-              <pre class="terminal" aria-label="Windows Git Bash 安装 Node.js 命令"><code><span>$</span> nvm install 20
-<span>$</span> nvm use 20
-<span>$</span> node --version
-<span>$</span> npm --version</code></pre>
+              <pre class="terminal" aria-label="Windows Git Bash 安装 Node.js 命令"><code>nvm install 20
+nvm use 20
+node --version
+npm --version</code></pre>
               <aside class="guide-note">从这一步开始，请始终使用 Git Bash 启动和操作本示例中的 CodexPro。</aside>
             </article>
           </div>
@@ -133,8 +133,8 @@
           <ol class="instruction-list">
             <li>
             <h3>安装示例服务 CodexPro</h3>
-              <pre class="terminal" aria-label="安装 CodexPro 命令"><code><span>$</span> npm install -g codexpro
-<span>$</span> codexpro --version</code></pre>
+              <pre class="terminal" aria-label="安装 CodexPro 命令"><code>npm install -g codexpro
+codexpro --version</code></pre>
             </li>
             <li>
               <h3>在自定义工作区目录中初始化</h3>
@@ -142,13 +142,13 @@
               <div class="command-pair">
                 <div>
                   <strong>macOS</strong>
-                  <pre class="terminal"><code><span>$</span> cd /Users/your-name/code/my-project
-<span>$</span> codexpro setup --tunnel none --no-auth</code></pre>
+                  <pre class="terminal"><code>cd /Users/your-name/code/my-project
+codexpro setup --tunnel none --no-auth</code></pre>
                 </div>
                 <div>
                   <strong>Windows · Git Bash</strong>
-                  <pre class="terminal"><code><span>$</span> cd /c/Users/your-name/code/my-project
-<span>$</span> codexpro setup --tunnel none --no-auth</code></pre>
+                  <pre class="terminal"><code>cd /c/Users/your-name/code/my-project
+codexpro setup --tunnel none --no-auth</code></pre>
                 </div>
               </div>
               <p>命令会把当前目录保存为工作区，并明确使用仅绑定本机回环地址的无鉴权本地模式。</p>
@@ -157,7 +157,7 @@
             <li>
               <h3>以本地模式启动</h3>
               <p>以后只需进入同一工作区并运行：</p>
-              <pre class="terminal" aria-label="启动 CodexPro 本地 MCP 命令"><code><span>$</span> codexpro start --tunnel none --no-auth</code></pre>
+              <pre class="terminal" aria-label="启动 CodexPro 本地 MCP 命令"><code>codexpro start --tunnel none --no-auth</code></pre>
               <p>保持这个终端窗口运行。默认的无鉴权 Streamable HTTP 地址为：</p>
               <pre class="endpoint"><code>http://127.0.0.1:8787/mcp</code></pre>
             </li>
