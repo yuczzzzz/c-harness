@@ -4,14 +4,13 @@ import { displayLocalEnvironmentMcpName, selectLocalEnvironmentMcp } from "@/mcp
 import type { SkillMetadata } from "@/skills/contracts";
 import type { SessionToolKnowledgeState } from "@/session-knowledge/state";
 import { formatSessionKnowledgeState } from "@/harness/session-knowledge";
+import type { RuntimeOperatingSystem } from "@/runtime/contracts";
 
 export interface InitialHarnessOptions {
   skillEnabled: boolean;
   mcpEnabled: boolean;
-  operatingSystem?: HarnessOperatingSystem;
+  operatingSystem?: RuntimeOperatingSystem;
 }
-
-export type HarnessOperatingSystem = "windows" | "macos" | "linux" | "other";
 
 /** 构建一条包含规则、当前目录和原始问题的可见 DeepSeek 消息。 */
 export function buildInitialHarness(
@@ -91,7 +90,7 @@ export function buildInitialHarness(
   ].join("\n");
 }
 
-function operatingSystemPrompt(operatingSystem: HarnessOperatingSystem): string[] {
+function operatingSystemPrompt(operatingSystem: RuntimeOperatingSystem): string[] {
   const displayName = {
     windows: "Windows",
     macos: "macOS",

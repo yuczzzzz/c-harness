@@ -1,4 +1,4 @@
-import { installSiteContentRuntime, loadCurrentOperatingSystem } from "@/content/runtime";
+import { installSiteContentRuntime } from "@/content/runtime";
 import { emptySessionToolKnowledgeState, type SessionKnowledgeResource, type SessionKnowledgeResourceResolver, type SessionToolKnowledgeState } from "@/session-knowledge/state";
 import type { SessionToolKnowledgeStore } from "@/session-knowledge/store";
 import type { SiteTaskPort } from "@/tasks/page-task-coordinator";
@@ -6,21 +6,6 @@ import type { SiteTaskPort } from "@/tasks/page-task-coordinator";
 describe("shared content runtime", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-  });
-
-  it.each([
-    ["win", "windows"],
-    ["mac", "macos"],
-    ["linux", "linux"],
-    ["cros", "other"]
-  ] as const)("maps Chrome platform %s to %s", async (platform, expected) => {
-    vi.stubGlobal("chrome", {
-      runtime: {
-        getPlatformInfo: vi.fn(async () => ({ os: platform, arch: "x86-64", nacl_arch: "x86-64" }))
-      }
-    });
-
-    await expect(loadCurrentOperatingSystem()).resolves.toBe(expected);
   });
 
   it("loads existing session knowledge and keeps MCP disclosure support", async () => {
@@ -39,7 +24,8 @@ describe("shared content runtime", () => {
       { type: "settings.get" },
       { type: "catalog.get" },
       { type: "mcp.serviceCatalog.get" },
-      { type: "mcp.session.disclosures.get", sessionId: "session-1" }
+      { type: "mcp.session.disclosures.get", sessionId: "session-1" },
+      { type: "platform.get" }
     ]);
     coordinator.dispose();
   });
@@ -66,6 +52,7 @@ describe("shared content runtime", () => {
       { type: "settings.get" },
       { type: "catalog.get" },
       { type: "mcp.serviceCatalog.get" },
+      { type: "platform.get" },
       { type: "skill.readBatch", skillNames: ["writer"] },
       { type: "settings.get" },
       {
@@ -83,9 +70,9 @@ function stubRuntime(requests: unknown[]): void {
   vi.stubGlobal("chrome", {
     runtime: {
       id: "test-extension",
-      getPlatformInfo: vi.fn(async () => ({ os: "win", arch: "x86-64", nacl_arch: "x86-64" })),
       sendMessage: vi.fn(async (request: { type: string }) => {
         requests.push(request);
+        if (request.type === "platform.get") return { ok: true, data: "windows" };
         if (request.type === "settings.get") {
           return {
             ok: true,

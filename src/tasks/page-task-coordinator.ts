@@ -1,4 +1,4 @@
-import { buildInitialHarness, type HarnessOperatingSystem } from "@/harness/initial";
+import { buildInitialHarness } from "@/harness/initial";
 import {
   formatBatchCorrection,
   formatFinalAnswerCorrection,
@@ -13,6 +13,7 @@ import { McpTaskCoordinator, type McpToolCallDecision } from "@/mcp/task-coordin
 import type { ReferenceReadResult, SkillMetadata, SkillReadResult } from "@/skills/contracts";
 import type { TaskState } from "@/tasks/contracts";
 import { SKILL_DISABLED_MESSAGE, type GeneralSettings } from "@/settings/store";
+import type { RuntimeOperatingSystem } from "@/runtime/contracts";
 import {
   applySessionKnowledgeResources,
   cloneSessionToolKnowledgeState,
@@ -56,7 +57,7 @@ export interface PageTaskCoordinatorHooks {
   progressiveKnowledge?: DeepSeekProgressiveKnowledgeStrategy;
   mcp?: McpPageTaskStrategy;
   loadSettings?: () => Promise<GeneralSettings>;
-  loadOperatingSystem?: () => Promise<HarnessOperatingSystem>;
+  loadOperatingSystem?: () => Promise<RuntimeOperatingSystem>;
   random?: () => number;
 }
 

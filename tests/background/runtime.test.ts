@@ -23,6 +23,7 @@ describe("background runtime", () => {
     vi.stubGlobal("chrome", {
       runtime: {
         id: EXTENSION_ID,
+        getPlatformInfo: vi.fn(async () => ({ os: "win", arch: "x86-64", nacl_arch: "x86-64" })),
         getURL: (path: string) => `chrome-extension://${EXTENSION_ID}/${path}`
       },
       permissions: {
@@ -63,6 +64,30 @@ describe("background runtime", () => {
     );
 
     expect(response).toEqual({ ok: true, data: [expect.objectContaining({ name: "writer" })] });
+  });
+
+  it.each([
+    ["win", "windows"],
+    ["mac", "macos"],
+    ["linux", "linux"],
+    ["cros", "other"]
+  ] as const)("maps Chrome platform %s for trusted chat tabs", async (platform, expected) => {
+    vi.mocked(chrome.runtime.getPlatformInfo as () => Promise<chrome.runtime.PlatformInfo>).mockResolvedValueOnce({
+      os: platform,
+      arch: "x86-64",
+      nacl_arch: "x86-64"
+    });
+
+    const response = await handleRuntimeRequest({ type: "platform.get" }, deepSeekSender());
+
+    expect(response).toEqual({ ok: true, data: expected });
+  });
+
+  it("rejects platform reads from extension pages", async () => {
+    const response = await handleRuntimeRequest({ type: "platform.get" }, optionsSender());
+
+    expect(response).toEqual({ ok: false, error: "当前页面不能读取操作系统信息。" });
+    expect(chrome.runtime.getPlatformInfo).not.toHaveBeenCalled();
   });
 
   it("allows options and trusted chat senders to read settings but only options can update them", async () => {

@@ -1,8 +1,15 @@
-import type { RuntimeResponse } from "@/runtime/contracts";
+import type { RuntimeOperatingSystem, RuntimeResponse } from "@/runtime/contracts";
 import type { McpServiceCatalogItem, McpServiceDetails, McpSessionDisclosure, McpToolCallResult } from "@/mcp/contracts";
 import type { GeneralSettings } from "@/settings/store";
 import type { ReferenceReadResult, SkillMetadata, SkillReadResult } from "@/skills/contracts";
 import type { SkillProvider } from "@/skills/provider";
+
+/** 通过扩展 Service Worker 读取 Chrome 当前运行的操作系统。 */
+export async function loadCurrentOperatingSystem(): Promise<RuntimeOperatingSystem> {
+  const response = (await sendRuntimeMessage({ type: "platform.get" })) as RuntimeResponse<RuntimeOperatingSystem>;
+  if (!response.ok) throw new Error(response.error);
+  return response.data;
+}
 
 /** 完整校验请求后，通过扩展 Service Worker 读取 Reference 文件。 */
 export async function loadReferenceBatch(

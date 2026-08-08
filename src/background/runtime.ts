@@ -1,4 +1,4 @@
-import type { RuntimeRequest, RuntimeResponse } from "@/runtime/contracts";
+import type { RuntimeOperatingSystem, RuntimeRequest, RuntimeResponse } from "@/runtime/contracts";
 import { callMcpEndpointTool, discoverMcpEndpoint } from "@/mcp/client";
 import { MCP_LIMITS } from "@/mcp/contracts";
 import { normalizeMcpEndpoint } from "@/mcp/endpoint";
@@ -61,6 +61,9 @@ export async function handleRuntimeRequest(
     if (!isAllowedExtensionSender(sender)) return failure("请求来源不受信任。");
 
     switch (message.type) {
+      case "platform.get":
+        if (!isTrustedChatSender(sender)) return failure("当前页面不能读取操作系统信息。");
+        return { ok: true, data: operatingSystemFromPlatform(await chrome.runtime.getPlatformInfo()) };
       case "settings.get":
         if (!isOptionsSender(sender) && !isTrustedChatSender(sender)) {
           return failure("当前页面不能读取通用设置。");
@@ -223,6 +226,7 @@ function isTrustedChatSender(sender: chrome.runtime.MessageSender): boolean {
 
 function isRuntimeRequest(value: unknown): value is RuntimeRequest {
   if (!isRecord(value) || typeof value.type !== "string") return false;
+  if (value.type === "platform.get") return true;
   if (value.type === "settings.get") return true;
   if (value.type === "settings.skillEnabled.update") return typeof value.skillEnabled === "boolean";
   if (value.type === "settings.reinjectionDelay.update") {
@@ -263,6 +267,13 @@ function isRuntimeRequest(value: unknown): value is RuntimeRequest {
   if (value.type === "skill.replace") return "skillPackage" in value;
   if (value.type === "skill.delete") return typeof value.skillName === "string";
   return false;
+}
+
+function operatingSystemFromPlatform(platform: chrome.runtime.PlatformInfo): RuntimeOperatingSystem {
+  if (platform.os === "win") return "windows";
+  if (platform.os === "mac") return "macos";
+  if (platform.os === "linux") return "linux";
+  return "other";
 }
 
 async function addMcpServiceFromEndpoint(endpointInput: string) {

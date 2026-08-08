@@ -9,7 +9,10 @@ import type {
 import type { GeneralSettings } from "@/settings/store";
 import type { ReferenceReadResult, SkillMetadata, SkillPackage, SkillReadResult } from "@/skills/contracts";
 
+export type RuntimeOperatingSystem = "windows" | "macos" | "linux" | "other";
+
 export type RuntimeRequest =
+  | { type: "platform.get" }
   | { type: "catalog.get" }
   | { type: "settings.get" }
   | { type: "settings.skillEnabled.update"; skillEnabled: boolean }
@@ -38,6 +41,7 @@ export type RuntimeFailure = { ok: false; error: string };
 export type RuntimeResponse<T = undefined> = RuntimeSuccess<T> | RuntimeFailure;
 
 export type GeneralSettingsResponse = RuntimeResponse<GeneralSettings>;
+export type PlatformResponse = RuntimeResponse<RuntimeOperatingSystem>;
 export type CatalogResponse = RuntimeResponse<SkillMetadata[]>;
 export type SkillBatchResponse = RuntimeResponse<SkillReadResult[]>;
 export type ReferenceBatchResponse = RuntimeResponse<ReferenceReadResult[]>;
