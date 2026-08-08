@@ -1,4 +1,4 @@
-import { buildInitialHarness } from "@/harness/initial";
+import { buildInitialHarness, type HarnessOperatingSystem } from "@/harness/initial";
 import {
   formatBatchCorrection,
   formatFinalAnswerCorrection,
@@ -56,6 +56,7 @@ export interface PageTaskCoordinatorHooks {
   progressiveKnowledge?: DeepSeekProgressiveKnowledgeStrategy;
   mcp?: McpPageTaskStrategy;
   loadSettings?: () => Promise<GeneralSettings>;
+  loadOperatingSystem?: () => Promise<HarnessOperatingSystem>;
   random?: () => number;
 }
 
@@ -156,17 +157,19 @@ export class PageTaskCoordinator {
         return this.complete();
       }
 
-      const [initialKnowledge, mcpDisclosures] = await Promise.all([
+      const [initialKnowledge, mcpDisclosures, operatingSystem] = await Promise.all([
         skillEnabled ? this.hooks.progressiveKnowledge?.loadInitialState() : Promise.resolve(undefined),
         mcpEnabled && this.hooks.mcp && sessionId
           ? this.hooks.mcp.loadDisclosures(sessionId)
-          : Promise.resolve([])
+          : Promise.resolve([]),
+        this.hooks.loadOperatingSystem?.() ?? Promise.resolve("other" as const)
       ]);
       this.assertCurrentRun(currentRunId);
       let cursor = this.adapter.captureAssistantCursor();
       await this.sendInternal(buildInitialHarness(catalog, normalizedQuestion, initialKnowledge, mcpCatalog, mcpDisclosures, {
         skillEnabled,
-        mcpEnabled
+        mcpEnabled,
+        operatingSystem
       }));
       if (skillEnabled) await this.hooks.afterInitialSend?.(normalizedQuestion);
       this.assertCurrentRun(currentRunId);

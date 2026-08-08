@@ -3,6 +3,23 @@ import { emptySessionToolKnowledgeState } from "@/deepseek/session-tool-knowledg
 import type { SkillMetadata } from "@/skills/contracts";
 
 describe("initial harness", () => {
+  it.each([
+    ["windows", "Windows"],
+    ["macos", "macOS"],
+    ["linux", "Linux"],
+    ["other", "其他或未知系统"]
+  ] as const)("injects the current %s operating system", (operatingSystem, displayName) => {
+    const harness = buildInitialHarness([], "问题", undefined, [], [], {
+      skillEnabled: true,
+      mcpEnabled: true,
+      operatingSystem
+    });
+
+    expect(harness).toContain(`用户当前系统：${displayName}。`);
+    expect(harness.includes("仅支持 Git Bash 命令，不支持 Windows 命令行 和 PowerShell。"))
+      .toBe(operatingSystem === "windows");
+  });
+
   it("preserves the original question and closes the protocol immediately before it", () => {
     const question = "第一行\n\n```txt\n保留原样\n```";
     const harness = buildInitialHarness([], question);

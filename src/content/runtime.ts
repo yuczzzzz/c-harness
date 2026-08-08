@@ -23,6 +23,16 @@ import {
 } from "@/session-knowledge/state";
 import type { SessionToolKnowledgeStore } from "@/session-knowledge/store";
 import { PageTaskCoordinator, type SiteTaskPort } from "@/tasks/page-task-coordinator";
+import type { HarnessOperatingSystem } from "@/harness/initial";
+
+/** 读取 Chrome 当前运行平台，并映射为 Harness 使用的有限操作系统集合。 */
+export async function loadCurrentOperatingSystem(): Promise<HarnessOperatingSystem> {
+  const { os } = await chrome.runtime.getPlatformInfo();
+  if (os === "win") return "windows";
+  if (os === "mac") return "macos";
+  if (os === "linux") return "linux";
+  return "other";
+}
 
 /** 基于一个网站专用适配器安装共享页面任务运行时。 */
 export function installSiteContentRuntime(
@@ -89,6 +99,7 @@ export function installSiteContentRuntime(
       },
       afterInitialSend: async () => await bindTemporaryKnowledgeAfterFirstSend(),
       loadSettings: loadGeneralSettings,
+      loadOperatingSystem: loadCurrentOperatingSystem,
       progressiveKnowledge: {
         loadInitialState: async () => await loadCurrentKnowledge(),
         onFeedbackCommitted: async (resources) => await commitKnowledge(resources),

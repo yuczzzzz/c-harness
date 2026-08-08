@@ -1,4 +1,4 @@
-import { installSiteContentRuntime } from "@/content/runtime";
+import { installSiteContentRuntime, loadCurrentOperatingSystem } from "@/content/runtime";
 import { emptySessionToolKnowledgeState, type SessionKnowledgeResource, type SessionKnowledgeResourceResolver, type SessionToolKnowledgeState } from "@/session-knowledge/state";
 import type { SessionToolKnowledgeStore } from "@/session-knowledge/store";
 import type { SiteTaskPort } from "@/tasks/page-task-coordinator";
@@ -6,6 +6,21 @@ import type { SiteTaskPort } from "@/tasks/page-task-coordinator";
 describe("shared content runtime", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["win", "windows"],
+    ["mac", "macos"],
+    ["linux", "linux"],
+    ["cros", "other"]
+  ] as const)("maps Chrome platform %s to %s", async (platform, expected) => {
+    vi.stubGlobal("chrome", {
+      runtime: {
+        getPlatformInfo: vi.fn(async () => ({ os: platform, arch: "x86-64", nacl_arch: "x86-64" }))
+      }
+    });
+
+    await expect(loadCurrentOperatingSystem()).resolves.toBe(expected);
   });
 
   it("loads existing session knowledge and keeps MCP disclosure support", async () => {
@@ -18,6 +33,8 @@ describe("shared content runtime", () => {
     await coordinator.startQuestion("Question");
 
     expect(knowledgeStore.loadedSessions).toEqual(["session-1"]);
+    expect(adapter.sentMessages[0]).toContain("用户当前系统：Windows。");
+    expect(adapter.sentMessages[0]).toContain("仅支持 Git Bash 命令，不支持 Windows 命令行 和 PowerShell。");
     expect(requests).toEqual([
       { type: "settings.get" },
       { type: "catalog.get" },
@@ -66,6 +83,7 @@ function stubRuntime(requests: unknown[]): void {
   vi.stubGlobal("chrome", {
     runtime: {
       id: "test-extension",
+      getPlatformInfo: vi.fn(async () => ({ os: "win", arch: "x86-64", nacl_arch: "x86-64" })),
       sendMessage: vi.fn(async (request: { type: string }) => {
         requests.push(request);
         if (request.type === "settings.get") {
@@ -117,6 +135,7 @@ function stubRuntime(requests: unknown[]): void {
 
 class RuntimeAdapter implements SiteTaskPort {
   readonly siteName = "Test";
+  readonly sentMessages: string[] = [];
   private cursor: object = {};
   private sentCount = 0;
 
@@ -132,7 +151,8 @@ class RuntimeAdapter implements SiteTaskPort {
   isConversationNavigation(): boolean { return false; }
   getCurrentSessionId(): string | null { return this.sessionId; }
   captureAssistantCursor(): object | null { return this.cursor; }
-  sendMessage(): void {
+  sendMessage(message: string): void {
+    this.sentMessages.push(message);
     this.sentCount += 1;
     if (this.sentCount === 1 && !this.sessionId) this.sessionId = "opened-session";
   }

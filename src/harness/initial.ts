@@ -8,7 +8,10 @@ import { formatSessionKnowledgeState } from "@/harness/session-knowledge";
 export interface InitialHarnessOptions {
   skillEnabled: boolean;
   mcpEnabled: boolean;
+  operatingSystem?: HarnessOperatingSystem;
 }
+
+export type HarnessOperatingSystem = "windows" | "macos" | "linux" | "other";
 
 /** 构建一条包含规则、当前目录和原始问题的可见 DeepSeek 消息。 */
 export function buildInitialHarness(
@@ -19,7 +22,7 @@ export function buildInitialHarness(
   mcpDisclosures: McpSessionDisclosure[] = [],
   options: InitialHarnessOptions = { skillEnabled: true, mcpEnabled: true }
 ): string {
-  const { skillEnabled, mcpEnabled } = options;
+  const { skillEnabled, mcpEnabled, operatingSystem = "other" } = options;
   const localEnvironmentMcp = mcpEnabled ? selectLocalEnvironmentMcp(mcpCatalog).selected : null;
   const skillCatalog = catalog.length === 0
     ? "（当前没有已导入的 Skill）"
@@ -36,6 +39,7 @@ export function buildInitialHarness(
     "",
     openingRule(skillEnabled, mcpEnabled),
     "",
+    ...operatingSystemPrompt(operatingSystem),
     ...(skillEnabled ? [
       skillRule,
       "```skill",
@@ -85,6 +89,22 @@ export function buildInitialHarness(
     "",
     question
   ].join("\n");
+}
+
+function operatingSystemPrompt(operatingSystem: HarnessOperatingSystem): string[] {
+  const displayName = {
+    windows: "Windows",
+    macos: "macOS",
+    linux: "Linux",
+    other: "其他或未知系统"
+  }[operatingSystem];
+  return [
+    `用户当前系统：${displayName}。`,
+    ...(operatingSystem === "windows"
+      ? ["仅支持 Git Bash 命令，不支持 Windows 命令行 和 PowerShell。"]
+      : []),
+    ""
+  ];
 }
 
 function openingRule(skillEnabled: boolean, mcpEnabled: boolean): string {
